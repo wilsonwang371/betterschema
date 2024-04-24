@@ -16,7 +16,7 @@ def _get_attr_func(name):
 def _set_attr_func(name):
     def setter(self, value):
         # get the type of the attribute
-        attr_type = self.__scheme_annotations__.get(name)
+        attr_type = self.__schema_annotations__.get(name)
         print(f"Setting {name} of type {attr_type}")
         origin = t.get_origin(attr_type) 
         if t.get_origin(attr_type) is not None:
@@ -55,8 +55,8 @@ def _set_attr_func(name):
                     raise ValueError(f"{name} is not a dictionary")
         elif t.get_origin(attr_type) is None:
             # classes or primitives
-            if hasattr(attr_type, '__scheme_annotations__'):
-                # dict to scheme type
+            if hasattr(attr_type, '__schema_annotations__'):
+                # dict to schema type
                 if isinstance(value, dict):
                     if name not in self.__dict__:
                         # create an instance of the class
@@ -91,7 +91,7 @@ def _merge_dict(self, val: t.Dict[str, t.Any]):
     return self
 
 def _to_string(self):
-    keys = self.__scheme_annotations__.keys()
+    keys = self.__schema_annotations__.keys()
     res = "{"
     for k in keys:
         if not isinstance(getattr(self, k), str):
@@ -120,7 +120,7 @@ def define(cls: t.Type[t.Any]):
     attrs['__ilshift__'] = _merge_dict
     attrs['__str__'] = _to_string
 
-    attrs['__scheme_annotations__'] = cls.__annotations__
+    attrs['__schema_annotations__'] = cls.__annotations__
     for k, v in subclasses.items():
         attrs[k] = v
 

@@ -1,30 +1,30 @@
-import core.scheme as scheme
+import core.schema as schema
 import typing as t
 import unittest
 
-@scheme.define
+@schema.define
 class Foo:
     foo1: str
     foo2: int
     foo3: bool
     foo4: t.List[str]
 
-    @scheme.define
-    class EmbeddedScheme:
+    @schema.define
+    class EmbeddedSchema:
         bar1: str
         bar2: int
         bar3: bool
-    bar: EmbeddedScheme
+    bar: EmbeddedSchema
 
-class TestScheme(unittest.TestCase):
+class TestSchema(unittest.TestCase):
 
-    def test_scheme(self):
+    def test_schema(self):
         foo = Foo()
         foo.foo1 = "hello"
         foo.foo2 = 0
         foo.foo3 = True
         foo.foo4 = ["a", "b", "c"]
-        foo.bar = Foo.EmbeddedScheme()
+        foo.bar = Foo.EmbeddedSchema()
         foo.bar.bar1 = "world"
         foo.bar.bar2 = 20
         foo.bar.bar3 = False
