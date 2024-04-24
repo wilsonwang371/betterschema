@@ -3,6 +3,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def _class_fullname(cls: t.Type[t.Any]):
+    return f"{cls.__module__}.{cls.__name__}"
+
 def _get_attr_func(name):
     def getter(self):
         if self is None:
@@ -14,10 +17,10 @@ def _set_attr_func(name):
     def setter(self, value):
         # get the type of the attribute
         attr_type = self.__scheme_annotations__.get(name)
-        logger.debug(f"Setting {name} to {value} of type {attr_type}")
+        print(f"Setting {name} of type {attr_type}")
         origin = t.get_origin(attr_type) 
         if t.get_origin(attr_type) is not None:
-            # we only support list and mapping types
+            # typing.List and typing.Mapping types
             if origin == list:
                 # check if the value is a list
                 if isinstance(value, list):
@@ -59,14 +62,17 @@ def _set_attr_func(name):
                         # create an instance of the class
                         instance = attr_type()
                         # merge the dictionary with the instance
-                        instance <<= value
+                        instance = _merge_dict(instance, value)
                         # set the attribute
                         self.__dict__[name] = instance
                     else:
                         # merge the dictionary with the instance
-                        self.__dict__[name] <<= value
+                        self.__dict__[name] = _merge_dict(self.__dict__[name], value)
                 else:
-                    raise ValueError(f"{name} is not a dictionary")
+                    # we cannot compare the type because we have modified the type
+                    if _class_fullname(type(value)) != _class_fullname(attr_type):
+                        raise ValueError(f"{name} is not of type {attr_type}")
+                    self.__dict__[name] = value
             elif isinstance(value, attr_type):
                 self.__dict__[name] = value
             else:
@@ -74,6 +80,9 @@ def _set_attr_func(name):
     return setter
 
 def _merge_dict(self, val: t.Dict[str, t.Any]):
+    # TODO recurisvely do this.
+    if not isinstance(val, dict):
+        raise ValueError("Value is not a dictionary")
     for k, v in val.items():
         if hasattr(self, k):
             setattr(self, k, v)
@@ -94,6 +103,7 @@ def _to_string(self):
 
 def define(cls: t.Type[t.Any]):
     attrs = {}
+    subclasses = {}
 
     for k, v in cls.__annotations__.items():
         print(k, v)
@@ -101,12 +111,19 @@ def define(cls: t.Type[t.Any]):
             _get_attr_func(k),
             _set_attr_func(k)
         )
+    
+    # iterate all classes defined in the class
+    for k in dir(cls):
+        if hasattr(getattr(cls, k), '__annotations__'):
+            subclasses[k] = define(getattr(cls, k))
 
     attrs['__ilshift__'] = _merge_dict
     attrs['__str__'] = _to_string
 
     attrs['__scheme_annotations__'] = cls.__annotations__
-    
+    for k, v in subclasses.items():
+        attrs[k] = v
+
     # create a class definition
     new_cls = type(cls.__name__, (object,), attrs)
     return new_cls
