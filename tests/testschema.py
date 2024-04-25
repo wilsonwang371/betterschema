@@ -2,6 +2,7 @@ import core.schema as schema
 import typing as t
 import unittest
 
+
 @schema.define
 class Foo:
     foo1: str
@@ -14,7 +15,14 @@ class Foo:
         bar1: str
         bar2: int
         bar3: bool
+
     bar: EmbeddedSchema
+
+
+@schema.check(Foo, Foo.foo1)
+def check_foo1(value: str) -> bool:
+    return value == "hello" or value == "world"
+
 
 class TestSchema(unittest.TestCase):
 
@@ -36,6 +44,18 @@ class TestSchema(unittest.TestCase):
         assert foo.bar.bar1 == "world"
         assert foo.bar.bar2 == 20
         assert foo.bar.bar3 == False
+
+        try:
+            foo.foo1 = "world"
+        except ValueError as e:
+            raise AssertionError("ValueError not raised")
+
+        try:
+            foo.foo1 = "hi"
+        except ValueError as e:
+            pass
+        else:
+            raise AssertionError("ValueError not raised")
 
         foo <<= {"foo2": 1}
         assert foo.foo2 == 1

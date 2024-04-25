@@ -3,22 +3,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def _class_fullname(cls: t.Type[t.Any]):
     return f"{cls.__module__}.{cls.__name__}"
+
 
 def _get_attr_func(name):
     def getter(self):
         if self is None:
             return None
         return self.__dict__.get(name)
+
     return getter
 
+
 def _set_attr_func(name):
+    # TODO: check values before set
     def setter(self, value):
         # get the type of the attribute
         attr_type = self.__schema_annotations__.get(name)
         print(f"Setting {name} of type {attr_type}")
-        origin = t.get_origin(attr_type) 
+        origin = t.get_origin(attr_type)
         if t.get_origin(attr_type) is not None:
             # typing.List and typing.Mapping types
             if origin == list:
@@ -55,7 +60,7 @@ def _set_attr_func(name):
                     raise ValueError(f"{name} is not a dictionary")
         elif t.get_origin(attr_type) is None:
             # classes or primitives
-            if hasattr(attr_type, '__schema_annotations__'):
+            if hasattr(attr_type, "__schema_annotations__"):
                 # dict to schema type
                 if isinstance(value, dict):
                     if name not in self.__dict__:
@@ -74,10 +79,16 @@ def _set_attr_func(name):
                         raise ValueError(f"{name} is not of type {attr_type}")
                     self.__dict__[name] = value
             elif isinstance(value, attr_type):
+                if name in self.__schema_checks__:
+                    for check in self.__schema_checks__[name]:
+                        if not check(value):
+                            raise ValueError(f"Check failed for {name}")
                 self.__dict__[name] = value
             else:
                 raise ValueError(f"{name} is not of type {attr_type}")
+
     return setter
+
 
 def _merge_dict(self, val: t.Dict[str, t.Any]):
     # TODO recurisvely do this.
@@ -90,16 +101,18 @@ def _merge_dict(self, val: t.Dict[str, t.Any]):
             raise AttributeError(f"{k} is not defined")
     return self
 
+
 def _to_string(self):
     keys = self.__schema_annotations__.keys()
     res = "{"
     for k in keys:
         if not isinstance(getattr(self, k), str):
-            res += f"\"{k}\": {getattr(self, k).__str__()}, "
+            res += f'"{k}": {getattr(self, k).__str__()}, '
         else:
-            res += f"\"{k}\": \"{getattr(self, k)}\", "
+            res += f'"{k}": "{getattr(self, k)}", '
     res = res[:-2] + "}"
     return res
+
 
 def define(cls: t.Type[t.Any]):
     attrs = {}
@@ -109,21 +122,39 @@ def define(cls: t.Type[t.Any]):
         print(k, v)
         attrs[k] = property(
             _get_attr_func(k),
-            _set_attr_func(k)
+            _set_attr_func(k),
+            None,
+            k,
         )
-    
+
     # iterate all classes defined in the class
     for k in dir(cls):
-        if hasattr(getattr(cls, k), '__annotations__'):
+        if hasattr(getattr(cls, k), "__annotations__"):
             subclasses[k] = define(getattr(cls, k))
 
-    attrs['__ilshift__'] = _merge_dict
-    attrs['__str__'] = _to_string
+    attrs["__ilshift__"] = _merge_dict
+    attrs["__str__"] = _to_string
 
-    attrs['__schema_annotations__'] = cls.__annotations__
+    attrs["__schema_annotations__"] = cls.__annotations__
+    attrs["__schema_checks__"] = {}
     for k, v in subclasses.items():
         attrs[k] = v
 
     # create a class definition
     new_cls = type(cls.__name__, (object,), attrs)
     return new_cls
+
+
+def check(cls: t.Type[t.Any], attr: property):
+    assert isinstance(attr, property)
+
+    def decorator(func):
+        def wrapper(value):
+            return func(value)
+
+        if attr.__doc__ not in cls.__schema_checks__:
+            cls.__schema_checks__[attr.__doc__] = []
+        cls.__schema_checks__[attr.__doc__].append(wrapper)
+        return wrapper
+
+    return decorator
