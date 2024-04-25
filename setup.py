@@ -7,8 +7,7 @@ setup(
     setup_requires=[
         "build",
     ],
-    install_requires=[
-    ],
+    install_requires=[],
     extras_require={
         "dev": [
             "unittest",
