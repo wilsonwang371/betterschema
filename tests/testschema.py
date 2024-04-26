@@ -8,7 +8,9 @@ class Foo:
     foo1: str
     foo2: int
     foo3: bool
-    foo4: t.List[str]
+    foo4: list[str]
+    foo5: t.Optional[int]
+    foo6: dict[str, int]
 
     @schema.define
     class EmbeddedSchema:
@@ -27,6 +29,22 @@ def check_foo1(value: str) -> bool:
 class TestSchema(unittest.TestCase):
 
     def test_schema(self):
+        # not supported yet
+        # foo = Foo(
+        #     {
+        #         "foo1": "hello",
+        #         "foo2": 0,
+        #         "foo3": True,
+        #         "foo4": ["a", "b", "c"],
+        #         "bar": Foo.EmbeddedSchema(
+        #             {
+        #                 "bar1": "world",
+        #                 "bar2": 20,
+        #                 "bar3": False,
+        #             }
+        #         ),
+        #     }
+        # )
         foo = Foo()
         foo.foo1 = "hello"
         foo.foo2 = 0

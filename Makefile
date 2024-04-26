@@ -1,14 +1,20 @@
 # get project dir
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
+# find lib.* directory
+LIB_BUILD_DIR := $(shell find $(PROJECT_DIR)/build -type d -name "lib.*")
+
 .PHONY: format test clean
+
+# default target 
+all: format build
 
 # format all python files
 format:
 	$(PROJECT_DIR)/scripts/format.sh
 
-test: clean
-	PYTHONPATH=$(PROJECT_DIR)/src python -m unittest 
+test: build
+	PYTHONPATH=$(LIB_BUILD_DIR) python -m unittest $(PROJECT_DIR)/tests/*.py
 
 clean:
 	rm -rf $(PROJECT_DIR)/build

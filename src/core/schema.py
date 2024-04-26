@@ -116,10 +116,10 @@ def _to_string(self):
 
 def define(cls: t.Type[t.Any]):
     attrs = {}
-    subclasses = {}
+    inner_classes = {}
 
     for k, v in cls.__annotations__.items():
-        print(k, v)
+        print(k, str(v))
         attrs[k] = property(
             _get_attr_func(k),
             _set_attr_func(k),
@@ -130,14 +130,14 @@ def define(cls: t.Type[t.Any]):
     # iterate all classes defined in the class
     for k in dir(cls):
         if hasattr(getattr(cls, k), "__annotations__"):
-            subclasses[k] = define(getattr(cls, k))
+            inner_classes[k] = define(getattr(cls, k))
 
     attrs["__ilshift__"] = _merge_dict
     attrs["__str__"] = _to_string
 
     attrs["__schema_annotations__"] = cls.__annotations__
     attrs["__schema_checks__"] = {}
-    for k, v in subclasses.items():
+    for k, v in inner_classes.items():
         attrs[k] = v
 
     # create a class definition
