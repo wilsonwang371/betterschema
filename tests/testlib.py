@@ -24,4 +24,4 @@ class TestCLibSchema(unittest.TestCase):
         except ValueError:
             pass
 
-        print(a)
+        print(a.__annotations__)
