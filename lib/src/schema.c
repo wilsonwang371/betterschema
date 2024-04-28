@@ -1,7 +1,6 @@
+#include "attr.h"
 #include "utils.h"
 #include <Python.h>
-
-#define UNUSED(x) (void)(x)
 
 #define CLASS_NAME_MAX_LEN 64
 #define CLASS_DEF_BUF_SIZE 4096 * 4
@@ -26,7 +25,7 @@ static int annotation_to_class_properties(PyObject *annotations, char *buf,
   char error_msg[100];
   while (PyDict_Next(annotations, &pos, &key, &value)) {
     PyObject *key_str = PyObject_Str(key);
-    PyObject *value_str = PyObject_GetAttrString(value, "__name__");
+    PyObject *value_str = object_name_obj(value);
 
     switch (type_str_to_val(PyUnicode_AsUTF8(value_str))) {
     case TYPE_INT:
@@ -69,14 +68,9 @@ static PyObject *schema(PyObject *self, PyObject *args) {
   UNUSED(self);
 
   // find all __annotations__
-  PyObject *annotations = PyObject_GetAttrString(obj, "__annotations__");
+  PyObject *annotations = schema_annotations(obj);
   if (annotations == NULL) {
-    PyErr_SetString(PyExc_AttributeError, "__annotations__ not found");
     return NULL;
-  } else {
-    if (!valid_annotations(annotations)) {
-      return NULL;
-    }
   }
 
   // return a new python class definition
@@ -87,8 +81,13 @@ static PyObject *schema(PyObject *self, PyObject *args) {
   }
 
   char class_name[CLASS_NAME_MAX_LEN];
-  strncpy(class_name, PyUnicode_AsUTF8(PyObject_GetAttrString(obj, "__name__")),
-          CLASS_NAME_MAX_LEN);
+  const char *obj_name = object_name_cstr(obj);
+  if (obj_name == NULL) {
+    PyErr_SetString(PyExc_AttributeError, "__name__ not found");
+    err = 1;
+    goto out;
+  }
+  strncpy(class_name, obj_name, CLASS_NAME_MAX_LEN);
   if (strlen(class_name) == 0) {
     PyErr_SetString(PyExc_AttributeError, "__name__ not found");
     err = 1;
@@ -114,14 +113,26 @@ static PyObject *schema(PyObject *self, PyObject *args) {
   PyRun_String(cls_def_buf, Py_file_input, pGlobal, pLocal);
   PyObject *class = PyDict_GetItemString(pLocal, class_name);
   if (class == NULL) {
-    PyErr_SetString(PyExc_RuntimeError, "Failed to create a class");
+    char error_msg[100];
+    sprintf(error_msg, "Failed to get class: %s", class_name);
+    PyErr_SetString(PyExc_RuntimeError, error_msg);
     err = 1;
     goto out;
   }
 
-  // add annotations object to the class
-  PyObject_SetAttrString(class, "__annotations__", annotations);
-  Py_DECREF(annotations);
+  // add __setattr__ method to the class
+  PyTypeObject *class_type = (PyTypeObject *)class;
+  // change setattr and getattr to schema_setattr and schema_getattr
+  class_type->tp_setattro = schema_setattr;
+  class_type->tp_getattro = schema_getattr;
+
+  // add annotations to the class type tp_dict
+  if (PyDict_SetItemString(class_type->tp_dict, "__annotations__",
+                           annotations) < 0) {
+    PyErr_SetString(PyExc_RuntimeError, "Failed to set __annotations__");
+    err = 1;
+    goto out;
+  }
 
   if (!PyCallable_Check(class)) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to create a callable class");
