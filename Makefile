@@ -20,8 +20,8 @@ clean:
 	rm -rf $(PROJECT_DIR)/build
 	rm -rf $(PROJECT_DIR)/dist
 	rm -rf $(PROJECT_DIR)/.eggs
-	rm -rf $(PROJECT_DIR)/__pycache__
-	rm -rf $(PROJECT_DIR)/*.egg-info
+	find $(PROJECT_DIR) -type d -name "__pycache__" -exec rm -rf {} +
+	find $(PROJECT_DIR) -type d -name "*.egg-info" -exec rm -rf {} +
 
 # build wheel using pip
 build: clean
