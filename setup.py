@@ -3,7 +3,7 @@ import os
 
 
 module = Extension(
-    "skema",
+    "pyskema",
     # all c files in the lib/src directory
     sources=[
         os.path.join("lib", "src", f) for f in os.listdir("lib/src") if f.endswith(".c")
@@ -15,7 +15,7 @@ module = Extension(
 
 
 setup(
-    name="skema",
+    name="pyskema",
     version="0.1.0",
     packages=find_packages("src", exclude=["tests"]),
     setup_requires=[

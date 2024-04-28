@@ -1,9 +1,9 @@
 import unittest
-import skema
+import pyskema
 import typing as t
 
 
-@skema.schema
+@pyskema.schema
 class ABC:
     a: int
     b: str = 1
