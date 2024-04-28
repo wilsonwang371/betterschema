@@ -1,9 +1,9 @@
 import unittest
-import pylatform
+import configschema
 import typing as t
 
 
-@pylatform.schema
+@configschema.schema
 class ABC:
     a: int
     b: str = 1

@@ -155,8 +155,8 @@ static PyMethodDef Methods[] = {
 };
 
 static struct PyModuleDef module = {PyModuleDef_HEAD_INIT,
-                                    "pylatform", // Name of the module
-                                    "Pylatform module for Python C API",
+                                    "configschema", // Name of the module
+                                    "configschema module for Python C API",
                                     -1,
                                     Methods,
                                     NULL,
@@ -164,4 +164,4 @@ static struct PyModuleDef module = {PyModuleDef_HEAD_INIT,
                                     NULL,
                                     NULL};
 
-PyMODINIT_FUNC PyInit_pylatform(void) { return PyModule_Create(&module); }
+PyMODINIT_FUNC PyInit_configschema(void) { return PyModule_Create(&module); }
