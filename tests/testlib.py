@@ -1,9 +1,9 @@
 import unittest
-import configschema
+import skema
 import typing as t
 
 
-@configschema.schema
+@skema.schema
 class ABC:
     a: int
     b: str = 1
