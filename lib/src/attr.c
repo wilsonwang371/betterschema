@@ -2,9 +2,9 @@
 #include "utils.h"
 
 // getattr
-PyObject *schema_getattr(PyObject *self, PyObject *name) {
+PyObject *PySchema_ClassDefGetAttr(PyObject *self, PyObject *name) {
   // get self annotations
-  if (schema_annotations(self) == NULL) {
+  if (PySchema_GetAnnotations(self) == NULL) {
     return NULL;
   }
 
@@ -15,7 +15,7 @@ PyObject *schema_getattr(PyObject *self, PyObject *name) {
   Py_DECREF(name_str);
 
   // check if the attribute is in the annotations
-  int has_attr = schema_contains_annotation(self, name_str_c);
+  int has_attr = PySchema_ContainAnnotationKey(self, name_str_c);
   if (!has_attr) {
     // check if the attribute has __ prefix
     if (name_str_c[0] == '_' && name_str_c[1] == '_') {
@@ -28,7 +28,8 @@ PyObject *schema_getattr(PyObject *self, PyObject *name) {
   }
 
   // get the type of the attribute
-  AnnotationDataType attr_type = schema_annotation_type(self, name_str_c);
+  AnnotationDataType attr_type =
+      PySchema_GetAnnotationValType(self, name_str_c);
   switch (attr_type) {
   case TYPE_INT:
   case TYPE_FLOAT:
@@ -41,10 +42,10 @@ PyObject *schema_getattr(PyObject *self, PyObject *name) {
   }
 }
 
-int schema_setattr(PyObject *self, PyObject *name, PyObject *value) {
+int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
   int res = 0;
   // get self annotations
-  if (schema_annotations(self) == NULL) {
+  if (PySchema_GetAnnotations(self) == NULL) {
     return -1;
   }
 
@@ -55,7 +56,7 @@ int schema_setattr(PyObject *self, PyObject *name, PyObject *value) {
   Py_DECREF(name_str);
 
   // check if the attribute is in the annotations
-  int has_attr = schema_contains_annotation(self, name_str_c);
+  int has_attr = PySchema_ContainAnnotationKey(self, name_str_c);
   if (!has_attr) {
     char error_msg[100];
     sprintf(error_msg, "Attribute \"%s\" not found while setting attr",
@@ -66,7 +67,8 @@ int schema_setattr(PyObject *self, PyObject *name, PyObject *value) {
   // fprintf(stderr, "Attribute \"%s\" found\n", name_str_c);
 
   // get the type of the attribute
-  AnnotationDataType attr_type = schema_annotation_type(self, name_str_c);
+  AnnotationDataType attr_type =
+      PySchema_GetAnnotationValType(self, name_str_c);
   switch (attr_type) {
   case TYPE_INT:
     if (!PyLong_Check(value)) {

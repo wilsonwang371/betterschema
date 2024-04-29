@@ -1,10 +1,10 @@
 #include "init.h"
 #include "utils.h"
 
-int schema_init(PyObject *self, PyObject *args, PyObject *kwds) {
+int PySchema_ClassDefInit(PyObject *self, PyObject *args, PyObject *kwds) {
 
   // get annotations
-  PyObject *annotations = schema_annotations(self);
+  PyObject *annotations = PySchema_GetAnnotations(self);
   if (annotations == NULL) {
     return -1;
   }
@@ -30,7 +30,7 @@ int schema_init(PyObject *self, PyObject *args, PyObject *kwds) {
     PyObject *key_str = PyObject_Str(key);
 
     // make sure the key is also inside the annotations
-    if (!schema_contains_annotation(self, PyUnicode_AsUTF8(key_str))) {
+    if (!PySchema_ContainAnnotationKey(self, PyUnicode_AsUTF8(key_str))) {
       char error_msg[100];
       sprintf(error_msg, "Attribute \"%s\" not found in annotations",
               PyUnicode_AsUTF8(key_str));
@@ -40,15 +40,16 @@ int schema_init(PyObject *self, PyObject *args, PyObject *kwds) {
 
     // make sure the value type matches the annotation type
     AnnotationDataType attr_type =
-        schema_annotation_type(self, PyUnicode_AsUTF8(key_str));
+        PySchema_GetAnnotationValType(self, PyUnicode_AsUTF8(key_str));
     // get the object type from the value object
     PyObject *value_type = PyObject_Type(value);
-    const char *value_type_name = object_name_cstr(value_type);
-    AnnotationDataType value_type_enum = str_to_typevalue(value_type_name);
+    const char *value_type_name = PyObject_GetNameStr(value_type);
+    AnnotationDataType value_type_enum =
+        PySchema_ConvertStrToAnnoType(value_type_name);
     if (attr_type != value_type_enum) {
       char error_msg[100];
-      sprintf(error_msg, "Expected %s, got %s", typevalue_to_str(attr_type),
-              value_type_name);
+      sprintf(error_msg, "Expected %s, got %s",
+              PySchema_ConvertAnnoTypeToStr(attr_type), value_type_name);
       PyErr_SetString(PyExc_TypeError, error_msg);
       return -1;
     }
@@ -79,6 +80,6 @@ int schema_init(PyObject *self, PyObject *args, PyObject *kwds) {
 
   UNUSED(args);
   UNUSED(kwds);
-  fprintf(stderr, "schema_init\n");
+  fprintf(stderr, "PySchema_ClassDefInit\n");
   return 0;
 }
