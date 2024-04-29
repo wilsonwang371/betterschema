@@ -15,7 +15,8 @@ typedef enum {
 
 int current_global_and_local(PyObject **pGlobal, PyObject **pLocal);
 
-int type_str_to_val(const char *str);
+AnnotationDataType str_to_typevalue(const char *str);
+const char *typevalue_to_str(AnnotationDataType type);
 
 PyObject *object_name_obj(PyObject *obj);
 const char *object_name_cstr(PyObject *obj);

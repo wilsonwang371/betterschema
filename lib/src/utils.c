@@ -21,7 +21,7 @@ int current_global_and_local(PyObject **pGlobal, PyObject **pLocal) {
 }
 
 // Convert a type string to a type value
-int type_str_to_val(const char *str) {
+AnnotationDataType str_to_typevalue(const char *str) {
   if (strcmp(str, "int") == 0) {
     return TYPE_INT;
   } else if (strcmp(str, "float") == 0) {
@@ -32,6 +32,21 @@ int type_str_to_val(const char *str) {
     return TYPE_BOOL;
   } else {
     return TYPE_UNKNOWN;
+  }
+}
+
+const char *typevalue_to_str(AnnotationDataType type) {
+  switch (type) {
+  case TYPE_INT:
+    return "int";
+  case TYPE_FLOAT:
+    return "float";
+  case TYPE_STR:
+    return "str";
+  case TYPE_BOOL:
+    return "bool";
+  case TYPE_UNKNOWN:
+    return "unknown";
   }
 }
 
@@ -109,7 +124,7 @@ AnnotationDataType schema_annotation_type(PyObject *obj, const char *attr) {
     return TYPE_UNKNOWN;
   }
 
-  result = type_str_to_val(type_name);
+  result = str_to_typevalue(type_name);
   Py_DECREF(typeval);
   return result;
 }
@@ -122,7 +137,7 @@ int is_valid_annotations(PyObject *annotations) {
     PyObject *key_str = PyObject_Str(key);
     PyObject *value_str = object_name_obj(value);
 
-    switch (type_str_to_val(PyUnicode_AsUTF8(value_str))) {
+    switch (str_to_typevalue(PyUnicode_AsUTF8(value_str))) {
     case TYPE_INT:
     case TYPE_FLOAT:
     case TYPE_STR:

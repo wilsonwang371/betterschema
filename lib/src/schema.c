@@ -1,4 +1,5 @@
 #include "attr.h"
+#include "init.h"
 #include "utils.h"
 #include <Python.h>
 
@@ -27,7 +28,7 @@ static int annotation_to_class_properties(PyObject *annotations, char *buf,
     PyObject *key_str = PyObject_Str(key);
     PyObject *value_str = object_name_obj(value);
 
-    switch (type_str_to_val(PyUnicode_AsUTF8(value_str))) {
+    switch (str_to_typevalue(PyUnicode_AsUTF8(value_str))) {
     case TYPE_INT:
     case TYPE_FLOAT:
     case TYPE_STR:
@@ -125,6 +126,7 @@ static PyObject *schema(PyObject *self, PyObject *args) {
   // change setattr and getattr to schema_setattr and schema_getattr
   class_type->tp_setattro = schema_setattr;
   class_type->tp_getattro = schema_getattr;
+  class_type->tp_init = schema_init;
 
   // add annotations to the class type tp_dict
   if (PyDict_SetItemString(class_type->tp_dict, "__annotations__",

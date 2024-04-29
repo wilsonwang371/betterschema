@@ -15,7 +15,14 @@ class TestCLibSchema(unittest.TestCase):
     def test_libmodule(self):
         print(str(ABC.__annotations__))
 
-        a = ABC()
+        a = ABC(
+            {
+                "a": 10,
+                "b": "hello",
+                "c": True,
+            }
+        )
+        print(a.b)
 
         print(a.__annotations__)
         a.a = 10
