@@ -1,7 +1,7 @@
 #include "init.h"
 #include "utils.h"
 
-int PySchema_ClassDefInit(PyObject *self, PyObject *args, PyObject *kwds) {
+int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
 
   // get annotations
   PyObject *annotations = PySchema_GetAnnotations(self);
@@ -38,18 +38,20 @@ int PySchema_ClassDefInit(PyObject *self, PyObject *args, PyObject *kwds) {
       return -1;
     }
 
-    // make sure the value type matches the annotation type
-    AnnotationDataType attr_type =
-        PySchema_GetAnnotationValType(self, PyUnicode_AsUTF8(key_str));
-    // get the object type from the value object
-    PyObject *value_type = PyObject_Type(value);
-    const char *value_type_name = PyObject_GetNameStr(value_type);
-    AnnotationDataType value_type_enum =
-        PySchema_ConvertStrToAnnoType(value_type_name);
-    if (attr_type != value_type_enum) {
+    PyObject *left_type =
+        PySchema_GetAnnotationValTypeObj(self, PyUnicode_AsUTF8(key_str));
+    if (left_type == NULL) {
+      return -1;
+    }
+    PyObject *right_type = PyObject_Type(value);
+    if (right_type == NULL) {
+      return -1;
+    }
+    // TODO: deal with Sehema = dict case
+    if (PyObject_RichCompareBool(left_type, right_type, Py_NE) == 1) {
       char error_msg[100];
-      sprintf(error_msg, "Expected %s, got %s",
-              PySchema_ConvertAnnoTypeToStr(attr_type), value_type_name);
+      sprintf(error_msg, "Expected %s, got %s", PyObject_GetNameStr(left_type),
+              PyObject_GetNameStr(right_type));
       PyErr_SetString(PyExc_TypeError, error_msg);
       return -1;
     }
@@ -61,25 +63,6 @@ int PySchema_ClassDefInit(PyObject *self, PyObject *args, PyObject *kwds) {
     Py_DECREF(key_str);
   }
 
-  // TODO: update this
-
-  // iterate all annotations
-  //   PyObject *key, *value;
-  //   Py_ssize_t pos = 0;
-  //   while (PyDict_Next(annotations, &pos, &key, &value)) {
-  //     PyObject *key_str = PyObject_Str(key);
-  //     PyObject *value_str = PyObject_Str(value);
-  //     char key_str_c[100];
-  //     char value_str_c[100];
-  //     sprintf(key_str_c, "%s", PyUnicode_AsUTF8(key_str));
-  //     sprintf(value_str_c, "%s", PyUnicode_AsUTF8(value_str));
-  //     fprintf(stderr, "key: %s, value: %s\n", key_str_c, value_str_c);
-  //     Py_DECREF(key_str);
-  //     Py_DECREF(value_str);
-  //   }
-
-  UNUSED(args);
   UNUSED(kwds);
-  fprintf(stderr, "PySchema_ClassDefInit\n");
   return 0;
 }

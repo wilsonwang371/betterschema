@@ -66,7 +66,7 @@ static PyObject *schema(PyObject *self, PyObject *args) {
   // PySchema_ClassDefGetAttr
   class_type->tp_setattro = PySchema_ClassDefSetAttr;
   class_type->tp_getattro = PySchema_ClassDefGetAttr;
-  class_type->tp_init = PySchema_ClassDefInit;
+  class_type->tp_init = PySchema_ClassInit;
 
   // add annotations to the class type tp_dict
   if (PyDict_SetItemString(class_type->tp_dict, "__annotations__",

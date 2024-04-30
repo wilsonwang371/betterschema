@@ -68,6 +68,27 @@ int PySchema_ContainAnnotationKey(PyObject *obj, const char *attr) {
   return has_attr;
 }
 
+PyObject *PySchema_GetAnnotationValTypeObj(PyObject *obj, const char *attr) {
+  PyObject *annotations = PySchema_GetAnnotations(obj);
+  if (annotations == NULL) {
+    fprintf(stderr,
+            "Failed to get annotations while getting annotation type\n");
+    return NULL;
+  }
+
+  PyObject *typeval = PyDict_GetItemString(annotations, attr);
+  if (typeval == NULL) {
+    fprintf(stderr, "Failed to get type\n");
+    return NULL;
+  }
+  if (PyType_Check(typeval) == 0) {
+    fprintf(stderr, "Failed to get type\n");
+    return NULL;
+  }
+
+  return typeval;
+}
+
 AnnotationDataType PySchema_GetAnnotationValType(PyObject *obj,
                                                  const char *attr) {
   AnnotationDataType result = TYPE_UNKNOWN;
