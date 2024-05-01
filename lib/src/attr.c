@@ -89,14 +89,6 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
     if (instance == NULL) {
       return -1;
     }
-    // // set the instance attributes
-    // if (PySchema_ClassInit(instance, PyTuple_Pack(1, value), NULL) < 0) {
-    //   char error_msg[100];
-    //   sprintf(error_msg, "Failed to init class with dict: %s",
-    //           PyObject_GetNameStr(anno_type));
-    //   PyErr_SetString(PyExc_RuntimeError, error_msg);
-    //   return -1;
-    // }
     return PyObject_GenericSetAttr(self, name, instance);
   }
 
