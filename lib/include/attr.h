@@ -1,7 +1,7 @@
 #ifndef _ATTR_H
 #define _ATTR_H
 
-#include "base.h"
+#include "schema.h"
 #include <Python.h>
 
 int PySchema_ClassDefSetAttr(PyObject *, PyObject *, PyObject *);

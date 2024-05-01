@@ -1,7 +1,7 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
-#include "base.h"
+#include "schema.h"
 #include <Python.h>
 
 int PySys_GetGlobalLocal(PyObject **pGlobal, PyObject **pLocal);
