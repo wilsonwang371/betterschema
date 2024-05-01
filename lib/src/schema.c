@@ -1,3 +1,4 @@
+#include "schema.h"
 #include "attr.h"
 #include "init.h"
 #include "utils.h"
@@ -82,6 +83,9 @@ static PyObject *schema(PyObject *self, PyObject *args) {
     goto out;
   }
 
+  // add the created class to the schema_classes list, the key is the class name
+  PySchema_AddRegisteredSchema(class_name, class);
+
 out:
   free(cls_def_buf);
   if (err)
@@ -106,4 +110,9 @@ static struct PyModuleDef module = {PyModuleDef_HEAD_INIT,
                                     NULL,
                                     NULL};
 
-PyMODINIT_FUNC PyInit_pyskema(void) { return PyModule_Create(&module); }
+PyMODINIT_FUNC PyInit_pyskema(void) {
+  // init dict object to hold all created schema classes
+  PySchema_Init();
+
+  return PyModule_Create(&module);
+}

@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "schema.h"
 
 // Get the current thread frame global and local
 int PySys_GetGlobalLocal(PyObject **pGlobal, PyObject **pLocal) {
@@ -68,7 +69,7 @@ int PySchema_ContainAnnotationKey(PyObject *obj, const char *attr) {
   return has_attr;
 }
 
-PyObject *PySchema_GetAnnotationValTypeObj(PyObject *obj, const char *attr) {
+PyObject *PySchema_GetAnnotationType(PyObject *obj, const char *attr) {
   PyObject *annotations = PySchema_GetAnnotations(obj);
   if (annotations == NULL) {
     fprintf(stderr,
@@ -123,8 +124,14 @@ AnnotationDataType PySchema_GetAnnotationValType(PyObject *obj,
 
 int PySchema_IsValidAnnotations(PyObject *annotations) {
   PyObject *key, *value;
+  PyObject *schema = PySchema_GetRegisteredSchemas();
   Py_ssize_t pos = 0;
   char error_msg[100];
+
+  if (schema == NULL) {
+    return 0;
+  }
+
   while (PyDict_Next(annotations, &pos, &key, &value)) {
     PyObject *key_str = PyObject_Str(key);
     PyObject *value_str = PyObject_GetName(value);
@@ -136,9 +143,12 @@ int PySchema_IsValidAnnotations(PyObject *annotations) {
     case TYPE_BOOL:
       break;
     case TYPE_UNKNOWN:
-      sprintf(error_msg, "Unsupported type: %s", PyUnicode_AsUTF8(value_str));
-      PyErr_SetString(PyExc_TypeError, error_msg);
-      return 0;
+      if (!PyDict_Contains(schema, value_str)) {
+        sprintf(error_msg, "Unsupported type: %s", PyUnicode_AsUTF8(value_str));
+        PyErr_SetString(PyExc_TypeError, error_msg);
+        return 0;
+      }
+      break;
     }
 
     Py_DECREF(key_str);

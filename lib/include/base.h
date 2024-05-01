@@ -1,7 +1,17 @@
 #ifndef _BASE_H
 #define _BASE_H
 
+#include <Python.h>
+
 #define UNUSED(x) (void)(x)
+
+int PySchema_IsPrimitiveType(PyObject *obj);
+int PySchema_IsSchemaType(PyObject *obj);
+
+void PySchema_Init();
+PyObject *PySchema_GetRegisteredSchemas();
+int PySchema_AddRegisteredSchema(const char *class_name, PyObject *schema);
+int PySchema_ContainsSchemaKey(const char *class_name);
 
 // Type values
 typedef enum {

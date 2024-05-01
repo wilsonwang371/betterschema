@@ -4,11 +4,19 @@ import typing as t
 
 
 @pyskema.schema
+class DEF:
+    x: int
+    y: str
+    z: bool
+
+
+@pyskema.schema
 class ABC:
     a: int
     b: str = 1
     c: bool
     # d: t.Optional[int]  # not supported yet
+    e: DEF
 
 
 class TestCLibSchema(unittest.TestCase):
@@ -20,9 +28,20 @@ class TestCLibSchema(unittest.TestCase):
                 "a": 10,
                 "b": "hello",
                 "c": True,
+                "e": {
+                    "x": 10,
+                    "y": "hello",
+                    "z": True,
+                },
             }
         )
-        print(a.b)
+        assert a.a == 10
+        assert a.b == "hello"
+        assert a.c == True
+        print(a.e)
+        assert a.e.x == 10
+        assert a.e.y == "hello"
+        assert a.e.z == True
 
         print(a.__annotations__)
         a.a = 10

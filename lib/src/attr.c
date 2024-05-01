@@ -1,4 +1,5 @@
 #include "attr.h"
+#include "init.h"
 #include "utils.h"
 
 // getattr
@@ -27,23 +28,22 @@ PyObject *PySchema_ClassDefGetAttr(PyObject *self, PyObject *name) {
     return NULL;
   }
 
-  // get the type of the attribute
-  AnnotationDataType attr_type =
-      PySchema_GetAnnotationValType(self, name_str_c);
-  switch (attr_type) {
-  case TYPE_INT:
-  case TYPE_FLOAT:
-  case TYPE_STR:
-  case TYPE_BOOL:
-    return PyObject_GenericGetAttr(self, name);
-  default:
-    PyErr_SetString(PyExc_TypeError, "Unsupported type");
+  PyObject *anno_type = PySchema_GetAnnotationType(self, name_str_c);
+  if (anno_type == NULL) {
     return NULL;
   }
+  if (PySchema_IsPrimitiveType(anno_type) || PySchema_IsSchemaType(anno_type)) {
+    return PyObject_GenericGetAttr(self, name);
+  }
+
+  char error_msg[100];
+  sprintf(error_msg, "Unsupported type while getting attribute %s of type %s",
+          name_str_c, ((PyTypeObject *)anno_type)->tp_name);
+  PyErr_SetString(PyExc_TypeError, error_msg);
+  return NULL;
 }
 
 int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
-  int res = 0;
   // get self annotations
   if (PySchema_GetAnnotations(self) == NULL) {
     return -1;
@@ -64,43 +64,45 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
     PyErr_SetString(PyExc_AttributeError, error_msg);
     return -1;
   }
-  // fprintf(stderr, "Attribute \"%s\" found\n", name_str_c);
 
-  // get the type of the attribute
-  AnnotationDataType attr_type =
-      PySchema_GetAnnotationValType(self, name_str_c);
-  switch (attr_type) {
-  case TYPE_INT:
-    if (!PyLong_Check(value)) {
-      PyErr_SetString(PyExc_TypeError, "Attribute must be an integer");
-      return -1;
-    }
-    res = PyObject_GenericSetAttr(self, name, value);
-    break;
-  case TYPE_FLOAT:
-    if (!PyFloat_Check(value)) {
-      PyErr_SetString(PyExc_TypeError, "Attribute must be a float");
-      return -1;
-    }
-    res = PyObject_GenericSetAttr(self, name, value);
-    break;
-  case TYPE_STR:
-    if (!PyUnicode_Check(value)) {
-      PyErr_SetString(PyExc_TypeError, "Attribute must be a string");
-      return -1;
-    }
-    res = PyObject_GenericSetAttr(self, name, value);
-    break;
-  case TYPE_BOOL:
-    if (!PyBool_Check(value)) {
-      PyErr_SetString(PyExc_TypeError, "Attribute must be a boolean");
-      return -1;
-    }
-    res = PyObject_GenericSetAttr(self, name, value);
-    break;
-  default:
-    PyErr_SetString(PyExc_TypeError, "Unsupported type");
+  PyObject *right_type = PyObject_Type(value);
+  if (right_type == NULL) {
     return -1;
   }
-  return res;
+  PyObject *anno_type = PySchema_GetAnnotationType(self, name_str_c);
+  if (anno_type == NULL) {
+    return -1;
+  }
+  if (PySchema_IsPrimitiveType(anno_type)) {
+    if (PyObject_RichCompareBool(anno_type, right_type, Py_EQ) == 0) {
+      char error_msg[100];
+      sprintf(error_msg, "Expected %s, got %s", PyObject_GetNameStr(anno_type),
+              PyObject_GetNameStr(right_type));
+      PyErr_SetString(PyExc_TypeError, error_msg);
+      return -1;
+    }
+    return PyObject_GenericSetAttr(self, name, value);
+  }
+  if (PySchema_IsSchemaType(anno_type)) {
+    // create a new instance of the class and initialize it
+    PyObject *instance = PyObject_CallObject(anno_type, PyTuple_Pack(1, value));
+    if (instance == NULL) {
+      return -1;
+    }
+    // // set the instance attributes
+    // if (PySchema_ClassInit(instance, PyTuple_Pack(1, value), NULL) < 0) {
+    //   char error_msg[100];
+    //   sprintf(error_msg, "Failed to init class with dict: %s",
+    //           PyObject_GetNameStr(anno_type));
+    //   PyErr_SetString(PyExc_RuntimeError, error_msg);
+    //   return -1;
+    // }
+    return PyObject_GenericSetAttr(self, name, instance);
+  }
+
+  char error_msg[100];
+  sprintf(error_msg, "Unsupported type while setting attribute %s of type %s",
+          name_str_c, ((PyTypeObject *)anno_type)->tp_name);
+  PyErr_SetString(PyExc_TypeError, error_msg);
+  return -1;
 }
