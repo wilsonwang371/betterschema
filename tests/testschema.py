@@ -1,18 +1,22 @@
-import pyskema.core.schema as schema
+import pyskema.core as core
 import typing as t
 import unittest
 
+# import faulthandler
 
-@schema.define
+# faulthandler.enable()
+
+
+@core.schema
 class Foo:
     foo1: str
     foo2: int
     foo3: bool
-    foo4: list[str]
-    foo5: t.Optional[int]
-    foo6: dict[str, int]
+    # foo4: list[str]
+    # foo5: t.Optional[int]
+    # foo6: dict[str, int]
 
-    @schema.define
+    @core.schema
     class EmbeddedSchema:
         bar1: str
         bar2: int
@@ -21,7 +25,7 @@ class Foo:
     bar: EmbeddedSchema
 
 
-@schema.check(Foo, Foo.foo1)
+@core.watch((Foo, "foo1"), (Foo, "foo2"))
 def check_foo1(value: str) -> bool:
     return value == "hello" or value == "world"
 

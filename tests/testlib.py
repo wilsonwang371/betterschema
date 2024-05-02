@@ -1,16 +1,16 @@
 import unittest
-import pyskema.baselib as baselib
+import pyskema.core as core
 import typing as t
 
 
-@baselib.schema
+@core.schema
 class DEF:
     x: int
     y: str
     z: bool
 
 
-@baselib.schema
+@core.schema
 class ABC:
     a: int
     b: str = 1
@@ -19,7 +19,7 @@ class ABC:
     e: DEF
 
 
-class TestbaselibSchema(unittest.TestCase):
+class TestCore(unittest.TestCase):
     def test_libmodule(self):
         print(str(ABC.__annotations__))
 

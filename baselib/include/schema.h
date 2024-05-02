@@ -3,8 +3,6 @@
 
 #include <Python.h>
 
-#define UNUSED(x) (void)(x)
-
 int PySchema_IsPrimitiveType(PyObject *obj);
 int PySchema_IsSchemaType(PyObject *obj);
 
@@ -24,5 +22,7 @@ typedef enum {
 
 AnnotationDataType PySchema_ConvertStrToAnnoType(const char *str);
 const char *PySchema_ConvertAnnoTypeToStr(AnnotationDataType type);
+
+PyObject *schema(PyObject *self, PyObject *args);
 
 #endif // _BASE_H
