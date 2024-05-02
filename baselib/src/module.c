@@ -110,7 +110,7 @@ static struct PyModuleDef module = {PyModuleDef_HEAD_INIT,
                                     NULL,
                                     NULL};
 
-PyMODINIT_FUNC PyInit_pyskema(void) {
+PyMODINIT_FUNC PyInit_baselib(void) {
   // init dict object to hold all created schema classes
   PySchema_Init();
 

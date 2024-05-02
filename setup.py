@@ -3,12 +3,14 @@ import os
 
 
 module = Extension(
-    "pyskema",
+    "pyskema.baselib",
     # all c files in the lib/src directory
     sources=[
-        os.path.join("lib", "src", f) for f in os.listdir("lib/src") if f.endswith(".c")
+        os.path.join("baselib", "src", f)
+        for f in os.listdir("baselib/src")
+        if f.endswith(".c")
     ],
-    include_dirs=["lib/include"],
+    include_dirs=["baselib/include"],
     extra_compile_args=["-O3", "-Wall", "-Wextra", "-Werror", "-std=c11"],
     extra_link_args=["-O3", "-Wall", "-Wextra", "-Werror", "-std=c11"],
 )
@@ -17,7 +19,7 @@ module = Extension(
 setup(
     name="pyskema",
     version="0.1.0",
-    packages=find_packages("src", exclude=["tests"]),
+    packages=find_packages(where="src", exclude=["tests"]),
     setup_requires=[
         "build",
     ],

@@ -1,4 +1,4 @@
-import core.schema as schema
+import pyskema.core.schema as schema
 import typing as t
 import unittest
 
