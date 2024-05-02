@@ -34,22 +34,23 @@ class TestSchema(unittest.TestCase):
 
     def test_schema(self):
         # not supported yet
-        # foo = Foo(
-        #     {
-        #         "foo1": "hello",
-        #         "foo2": 0,
-        #         "foo3": True,
-        #         "foo4": ["a", "b", "c"],
-        #         "bar": Foo.EmbeddedSchema(
-        #             {
-        #                 "bar1": "world",
-        #                 "bar2": 20,
-        #                 "bar3": False,
-        #             }
-        #         ),
-        #     }
-        # )
-        foo = Foo()
+        print(dir(Foo))
+        foo = Foo(
+            {
+                "foo1": "hello",
+                "foo2": 0,
+                "foo3": True,
+                # "foo4": ["a", "b", "c"],
+                "bar": Foo.EmbeddedSchema(
+                    {
+                        "bar1": "world",
+                        "bar2": 20,
+                        "bar3": False,
+                    }
+                ),
+            }
+        )
+        # foo = Foo()
         foo.foo1 = "hello"
         foo.foo2 = 0
         foo.foo3 = True

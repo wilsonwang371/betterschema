@@ -1,5 +1,5 @@
-import pyskema.baselib as baselib
 import logging
+import pyskema.baselib as baselib
 
 logger = logging.getLogger(__name__)
 

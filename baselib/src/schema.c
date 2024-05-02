@@ -188,7 +188,8 @@ PyObject *schema(PyObject *self, PyObject *args) {
   // go through all attributes in the class and check if they are schema classes
   // if they are, also create them inside the class
   pos = 0;
-  while (PyDict_Next(class_type->tp_dict, &pos, &key, &value)) {
+  PyTypeObject *obj_class = (PyTypeObject *)obj;
+  while (PyDict_Next(obj_class->tp_dict, &pos, &key, &value)) {
     if (PySchema_IsSchemaType(value)) {
       if (PyObject_GenericSetAttr(class, key, value) < 0) {
         PyErr_SetString(PyExc_RuntimeError, "Failed to set attribute");
