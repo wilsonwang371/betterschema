@@ -30,7 +30,7 @@ def _watch(*args):
             )
 
     def wrapper(func):
-        return baselib.watch(args, func)
+        return baselib.watch(list(args), func)
 
     return wrapper
 

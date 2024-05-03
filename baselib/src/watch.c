@@ -17,6 +17,35 @@ PyObject *watch(PyObject *self, PyObject *args) {
   PyObject *list_of_tuples = PyTuple_GetItem(args, 0);
   PyObject *func = PyTuple_GetItem(args, 1);
 
+  // check the number of arguments supported by the function is the same as the
+  // number of tuples
+  if (PyFunction_Check(func) == 0) {
+    PyErr_SetString(PyExc_TypeError, "Expected a function");
+    return NULL;
+  }
+  PyObject *code = PyFunction_GetCode(func);
+  if (code == NULL) {
+    PyErr_SetString(PyExc_TypeError, "Expected a function");
+    return NULL;
+  }
+  PyObject *argcount = PyObject_GetAttrString(code, "co_argcount");
+  if (argcount == NULL) {
+    PyErr_SetString(PyExc_TypeError, "Expected a function");
+    return NULL;
+  }
+  if (PyLong_Check(argcount) == 0) {
+    PyErr_SetString(PyExc_TypeError,
+                    "Expected a function with an integer argcount");
+    return NULL;
+  }
+  if (PyLong_AsLong(argcount) != PyList_Size(list_of_tuples)) {
+    char buf[100];
+    snprintf(buf, 100, "Expected a function with %ld arguments but got %ld",
+             PyList_Size(list_of_tuples), PyLong_AsLong(argcount));
+    PyErr_SetString(PyExc_TypeError, buf);
+    return NULL;
+  }
+
   // go through the list of tuples, make sure
   // the first element of each tuple is a class
   // and the second element is a string

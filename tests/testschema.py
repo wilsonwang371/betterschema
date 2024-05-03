@@ -26,8 +26,8 @@ class Foo:
 
 
 @core.watch((Foo, "foo1"), (Foo, "foo2"))
-def check_foo1(value: str) -> bool:
-    return value == "hello" or value == "world"
+def check_foo1(f1: Foo, f2: Foo) -> bool:
+    return True
 
 
 class TestSchema(unittest.TestCase):
