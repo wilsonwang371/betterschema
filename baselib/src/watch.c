@@ -124,7 +124,5 @@ PyObject *watch(PyObject *self, PyObject *args) {
 
   // clear the error
   PyErr_Clear();
-  // return the function
-  Py_INCREF(func);
   return func;
 }
