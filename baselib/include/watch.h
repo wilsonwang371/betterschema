@@ -4,6 +4,8 @@
 
 #include <Python.h>
 
+void PyWatch_Init();
+
 PyObject *watch(PyObject *self, PyObject *args);
 
 #endif // _WATCH_H

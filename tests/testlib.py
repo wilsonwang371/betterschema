@@ -2,6 +2,9 @@ import unittest
 import pyskema.core as core
 import typing as t
 
+# import faulthandler
+
+# faulthandler.enable()
 
 @core.schema
 class DEF:

@@ -3,6 +3,51 @@
 
 #include <Python.h>
 
+// a dict object that maps class names to another dict which maps attribute name
+// strings to functions
+static PyObject *watched_classes = NULL;
+
+void PyWatch_Init() {
+  // init dict object to hold all watched classes
+  watched_classes = PyDict_New();
+}
+
+int PyWatch_AddWatchedAttribute(PyObject *class, const char *attr,
+                                PyObject *func) {
+  // make sure class is a class
+  if (!PyType_Check(class)) {
+    return 0;
+  }
+  // make sure func is a function
+  if (!PyFunction_Check(func)) {
+    return 0;
+  }
+  // get the dict for the class
+  PyObject *class_dict = PyDict_GetItem(watched_classes, class);
+  if (class_dict == NULL) {
+    // create a new dict for the class
+    class_dict = PyDict_New();
+    PyDict_SetItem(watched_classes, class, class_dict);
+  }
+
+  // check if there is already an item with the same key
+  // if not add a new list to the dict
+  PyObject *func_list = PyDict_GetItem(class_dict, PyUnicode_FromString(attr));
+  if (func_list == NULL) {
+    func_list = PyList_New(0);
+    PyDict_SetItem(class_dict, PyUnicode_FromString(attr), func_list);
+  } else {
+    // make sure it is a list
+    if (!PyList_Check(func_list)) {
+      return 0;
+    }
+  }
+
+  // add the function to the list
+  PyList_Append(func_list, func);
+  return 1;
+}
+
 PyObject *watch(PyObject *self, PyObject *args) {
   UNUSED(self);
   // check if there are 2 arguments
@@ -70,7 +115,11 @@ PyObject *watch(PyObject *self, PyObject *args) {
       return NULL;
     }
 
-    // TODO: add watch function
+    // add watch function
+    if (!PyWatch_AddWatchedAttribute(class, PyUnicode_AsUTF8(attr), func)) {
+      PyErr_SetString(PyExc_RuntimeError, "Failed to add watch function");
+      return NULL;
+    }
   }
 
   // clear the error

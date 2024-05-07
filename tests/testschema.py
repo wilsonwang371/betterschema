@@ -2,9 +2,9 @@ import pyskema.core as core
 import typing as t
 import unittest
 
-# import faulthandler
+import faulthandler
 
-# faulthandler.enable()
+faulthandler.enable()
 
 
 @core.schema

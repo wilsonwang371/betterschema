@@ -25,6 +25,7 @@ static struct PyModuleDef module = {PyModuleDef_HEAD_INIT,
 PyMODINIT_FUNC PyInit_baselib(void) {
   // init dict object to hold all created schema classes
   PySchema_Init();
+  PyWatch_Init();
 
   return PyModule_Create(&module);
 }
