@@ -1,6 +1,7 @@
 #include "attr.h"
 #include "init.h"
 #include "utils.h"
+#include "watch.h"
 
 // getattr
 PyObject *PySchema_ClassDefGetAttr(PyObject *self, PyObject *name) {
@@ -81,7 +82,16 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
       PyErr_SetString(PyExc_TypeError, error_msg);
       return -1;
     }
-    return PyObject_GenericSetAttr(self, name, value);
+    PyObject *old_value = PyObject_GenericGetAttr(self, name);
+    if(PyObject_GenericSetAttr(self, name, value) < 0) {
+      return -1;
+    } else {
+      // trigger watch event
+      if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, value) < 0) {
+        return -1;
+      }
+      return 0;
+    }
   }
   if (PySchema_IsSchemaType(anno_type)) {
     // create a new instance of the class and initialize it
@@ -89,7 +99,16 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
     if (instance == NULL) {
       return -1;
     }
-    return PyObject_GenericSetAttr(self, name, instance);
+    PyObject *old_value = PyObject_GenericGetAttr(self, name);
+    if(PyObject_GenericSetAttr(self, name, instance) < 0) {
+      return -1;
+    } else {
+      // trigger watch event
+      if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, instance) < 0) {
+        return -1;
+      }
+      return 0;
+    }
   }
 
   char error_msg[100];

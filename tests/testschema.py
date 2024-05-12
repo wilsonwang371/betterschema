@@ -27,7 +27,8 @@ class Foo:
 
 
 @core.watch((Foo, "foo1"), (Foo, "foo2"))
-def check_foo1(inst, name: str) -> bool:
+def watch_values(inst, name: str, old, new) -> bool:
+    print(f"watch_values: {inst}.{name}, {old} -> {new}")
     return True
 
 
@@ -52,8 +53,8 @@ class TestSchema(unittest.TestCase):
             }
         )
         # foo = Foo()
-        foo.foo1 = "hello"
-        foo.foo2 = 0
+        foo.foo1 = "hello2"
+        foo.foo2 = 1
         foo.foo3 = True
 
         pprint(core.__watches__)

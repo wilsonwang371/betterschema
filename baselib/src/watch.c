@@ -92,13 +92,16 @@ PyObject *watch(PyObject *self, PyObject *args) {
                     "Expected a function with an integer argcount");
     return NULL;
   }
-  // we only support 2 arguments for now
+  // we only support 4 arguments for now
   // 1st argument is the instance of the class
-  // 2nd argument is the new value
-  if (PyLong_AsLong(argcount) != 2) {
-    PyErr_SetString(PyExc_TypeError, "Expected a function with 2 arguments");
+  // 2nd argument is the attribute name
+  // 3rd argument is the old value
+  // 4th argument is the new value
+  if (PyLong_AsLong(argcount) != 4) {
+    PyErr_SetString(PyExc_TypeError, "Expected a function with 4 arguments");
     return NULL;
   }
+
   // if (PyLong_AsLong(argcount) != PyList_Size(list_of_tuples)) {
   //   char buf[100];
   //   snprintf(buf, 100, "Expected a function with %ld arguments but got %ld",
@@ -141,4 +144,42 @@ PyObject *watch(PyObject *self, PyObject *args) {
   // clear the error
   PyErr_Clear();
   return func;
+}
+
+// This function is called when an attribute is updated
+// it will trigger all the watch functions for the attribute
+// if error occurs, it will return negative value
+int PyWatch_OnAttributeUpdate(PyObject* instance, const char *attr, const PyObject *old_value, const PyObject *new_value) {
+  PyObject *class = PyObject_Type(instance);
+  if (class == NULL) {
+    return -1;
+  }
+  PyObject *class_dict = PyDict_GetItem(watched_classes, class);
+  if (class_dict == NULL) {
+    return 0;
+  }
+
+  PyObject *func_list = PyDict_GetItem(class_dict, PyUnicode_FromString(attr));
+  if (func_list == NULL) {
+    return 0;
+  }
+
+  // call all the functions in the list
+  for (int i = 0; i < PyList_Size(func_list); i++) {
+    PyObject *func = PyList_GetItem(func_list, i);
+    if (func == NULL) {
+      return -1;
+    }
+    PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr), old_value, new_value);
+    if (args == NULL) {
+      return -1;
+    }
+    PyObject *result = PyObject_CallObject(func, args);
+    if (result == NULL) {
+      return -1;
+    }
+    Py_DECREF(result);
+  }
+  
+  return 0;
 }
