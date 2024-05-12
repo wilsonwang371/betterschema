@@ -27,5 +27,13 @@ PyMODINIT_FUNC PyInit_baselib(void) {
   PySchema_Init();
   PyWatch_Init();
 
-  return PyModule_Create(&module);
+  PyObject *m = PyModule_Create(&module);
+  if (m == NULL) {
+    return NULL;
+  }
+
+  // add variable to module
+  PyModule_AddObject(m, "__watches__", PyWatch_GetWatchDict());
+
+  return m;
 }

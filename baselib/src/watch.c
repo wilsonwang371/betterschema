@@ -12,6 +12,8 @@ void PyWatch_Init() {
   watched_classes = PyDict_New();
 }
 
+PyObject *PyWatch_GetWatchDict() { return watched_classes; }
+
 int PyWatch_AddWatchedAttribute(PyObject *class, const char *attr,
                                 PyObject *func) {
   // make sure class is a class

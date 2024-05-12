@@ -6,6 +6,8 @@
 
 void PyWatch_Init();
 
+PyObject *PyWatch_GetWatchDict();
+
 PyObject *watch(PyObject *self, PyObject *args);
 
 #endif // _WATCH_H

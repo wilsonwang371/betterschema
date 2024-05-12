@@ -38,4 +38,6 @@ def _watch(*args):
 schema = _schema
 watch = _watch
 
-__all__ = ["schema", "watch"]
+__watches__ = baselib.__watches__
+
+__all__ = ["schema", "watch", "__watches__"]

@@ -1,6 +1,7 @@
 import pyskema.core as core
 import typing as t
 import unittest
+from pprint import pprint
 
 import faulthandler
 
@@ -54,6 +55,9 @@ class TestSchema(unittest.TestCase):
         foo.foo1 = "hello"
         foo.foo2 = 0
         foo.foo3 = True
+
+        pprint(core.__watches__)
+
         foo.foo4 = ["a", "b", "c"]
         foo.bar = Foo.EmbeddedSchema()
         foo.bar.bar1 = "world"
