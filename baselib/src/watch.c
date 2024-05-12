@@ -92,13 +92,20 @@ PyObject *watch(PyObject *self, PyObject *args) {
                     "Expected a function with an integer argcount");
     return NULL;
   }
-  if (PyLong_AsLong(argcount) != PyList_Size(list_of_tuples)) {
-    char buf[100];
-    snprintf(buf, 100, "Expected a function with %ld arguments but got %ld",
-             PyList_Size(list_of_tuples), PyLong_AsLong(argcount));
-    PyErr_SetString(PyExc_TypeError, buf);
+  // we only support 2 arguments for now
+  // 1st argument is the instance of the class
+  // 2nd argument is the new value
+  if (PyLong_AsLong(argcount) != 2) {
+    PyErr_SetString(PyExc_TypeError, "Expected a function with 2 arguments");
     return NULL;
   }
+  // if (PyLong_AsLong(argcount) != PyList_Size(list_of_tuples)) {
+  //   char buf[100];
+  //   snprintf(buf, 100, "Expected a function with %ld arguments but got %ld",
+  //            PyList_Size(list_of_tuples), PyLong_AsLong(argcount));
+  //   PyErr_SetString(PyExc_TypeError, buf);
+  //   return NULL;
+  // }
 
   // go through the list of tuples, make sure
   // the first element of each tuple is a class

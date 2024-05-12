@@ -27,7 +27,7 @@ class Foo:
 
 
 @core.watch((Foo, "foo1"), (Foo, "foo2"))
-def check_foo1(f1: Foo, f2: Foo) -> bool:
+def check_foo1(inst, name: str) -> bool:
     return True
 
 
