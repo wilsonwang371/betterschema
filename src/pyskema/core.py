@@ -39,5 +39,6 @@ schema = _schema
 watch = _watch
 
 __watches__ = baselib.__watches__
+__schemas__ = baselib.__schemas__
 
-__all__ = ["schema", "watch", "__watches__"]
+__all__ = ["schema", "watch", "__watches__", "__schemas__"]

@@ -23,17 +23,14 @@ static struct PyModuleDef module = {PyModuleDef_HEAD_INIT,
                                     NULL};
 
 PyMODINIT_FUNC PyInit_baselib(void) {
-  // init dict object to hold all created schema classes
-  PySchema_Init();
-  PyWatch_Init();
-
   PyObject *m = PyModule_Create(&module);
   if (m == NULL) {
-    return NULL;
+    exit(1);
   }
 
-  // add variable to module
-  PyModule_AddObject(m, "__watches__", PyWatch_GetWatchDict());
+  // init dict object to hold all created schema classes
+  PySchema_Init(m);
+  PyWatch_Init(m);
 
   return m;
 }

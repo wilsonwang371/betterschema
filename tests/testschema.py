@@ -57,6 +57,7 @@ class TestSchema(unittest.TestCase):
         foo.foo3 = True
 
         pprint(core.__watches__)
+        pprint(core.__schemas__)
 
         foo.foo4 = ["a", "b", "c"]
         foo.bar = Foo.EmbeddedSchema()

@@ -6,7 +6,7 @@
 int PySchema_IsPrimitiveType(PyObject *obj);
 int PySchema_IsSchemaType(PyObject *obj);
 
-void PySchema_Init();
+void PySchema_Init(PyObject *module);
 PyObject *PySchema_GetRegisteredSchemas();
 int PySchema_AddRegisteredSchema(const char *class_name, PyObject *schema);
 int PySchema_ContainsSchemaKey(const char *class_name);

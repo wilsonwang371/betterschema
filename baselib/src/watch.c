@@ -7,9 +7,16 @@
 // strings to functions
 static PyObject *watched_classes = NULL;
 
-void PyWatch_Init() {
+void PyWatch_Init(PyObject *m) {
   // init dict object to hold all watched classes
   watched_classes = PyDict_New();
+  if (watched_classes == NULL) {
+    // exit if failed to create dict
+    exit(1);
+  }
+
+  // add variable to module
+  PyModule_AddObject(m, "__watches__", PyWatch_GetWatchDict());
 }
 
 PyObject *PyWatch_GetWatchDict() { return watched_classes; }

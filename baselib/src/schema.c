@@ -37,9 +37,17 @@ int PySchema_IsSchemaType(PyObject *obj) {
   return 0;
 }
 
-void PySchema_Init() {
+void PySchema_Init(PyObject *module) {
   // init dict object to hold all created schema classes
   registered_schemas = PyDict_New();
+
+  if (registered_schemas == NULL) {
+    // exit if failed to create dict
+    exit(1);
+  }
+
+  // add variable to module
+  PyModule_AddObject(module, "__schemas__", PySchema_GetRegisteredSchemas());
 }
 
 PyObject *PySchema_GetRegisteredSchemas() { return registered_schemas; }

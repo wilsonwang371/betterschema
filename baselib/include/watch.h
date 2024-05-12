@@ -4,7 +4,7 @@
 
 #include <Python.h>
 
-void PyWatch_Init();
+void PyWatch_Init(PyObject *module);
 
 PyObject *PyWatch_GetWatchDict();
 
