@@ -13,6 +13,8 @@ const char *PyObject_GetNameStr(PyObject *obj);
 PyObject *PySchema_GetAnnotations(PyObject *obj);
 int PySchema_ContainAnnotationKey(PyObject *obj, const char *attr);
 PyObject *PySchema_GetAnnotationType(PyObject *obj, const char *attr);
+PyObject *PySchema_GetAnnotationElementType(PyObject *obj, const char *attr);
+
 AnnotationDataType PySchema_GetAnnotationValType(PyObject *obj,
                                                  const char *attr);
 int PySchema_IsValidAnnotations(PyObject *annotations);

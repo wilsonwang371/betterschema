@@ -82,33 +82,62 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
       PyErr_SetString(PyExc_TypeError, error_msg);
       return -1;
     }
+    // if dict or list, make sure the element type is correct
+    if ((PyTypeObject *)anno_type == &PyList_Type) {
+      // make sure the right side element type is correct
+      PyObject *anno_element_type =
+          PySchema_GetAnnotationElementType(self, name_str_c);
+      if (anno_element_type == NULL) {
+        return -1;
+      }
+      // iterate each item in value and check if the type is correct
+      Py_ssize_t len = PyList_Size(value);
+      for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *item = PyList_GetItem(value, i);
+        PyObject *item_type = PyObject_Type(item);
+        if (PyObject_RichCompareBool(anno_element_type, item_type, Py_EQ) ==
+            0) {
+          char error_msg[100];
+          sprintf(error_msg, "Expected list element type %s, got %s",
+                  PyObject_GetNameStr(anno_element_type),
+                  PyObject_GetNameStr(item_type));
+          PyErr_SetString(PyExc_TypeError, error_msg);
+          return -1;
+        }
+      }
+    } else if ((PyTypeObject *)anno_type == &PyDict_Type) {
+      // TODO: check the element type of the dict
+      fprintf(stderr, "Dict type not supported yet\n");
+      return -1;
+    }
+
     PyObject *old_value = PyObject_GenericGetAttr(self, name);
-    if(PyObject_GenericSetAttr(self, name, value) < 0) {
+    if (PyObject_GenericSetAttr(self, name, value) < 0) {
       return -1;
     } else {
       // trigger watch event
       if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, value) < 0) {
         return -1;
       }
-      return 0;
     }
-  }
-  if (PySchema_IsSchemaType(anno_type)) {
+    return 0;
+  } else if (PySchema_IsSchemaType(anno_type)) {
     // create a new instance of the class and initialize it
     PyObject *instance = PyObject_CallObject(anno_type, PyTuple_Pack(1, value));
     if (instance == NULL) {
       return -1;
     }
     PyObject *old_value = PyObject_GenericGetAttr(self, name);
-    if(PyObject_GenericSetAttr(self, name, instance) < 0) {
+    if (PyObject_GenericSetAttr(self, name, instance) < 0) {
       return -1;
     } else {
       // trigger watch event
-      if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, instance) < 0) {
+      if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, instance) <
+          0) {
         return -1;
       }
-      return 0;
     }
+    return 0;
   }
 
   char error_msg[100];

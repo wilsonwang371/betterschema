@@ -13,7 +13,7 @@ class Foo:
     foo1: str
     foo2: int
     foo3: bool
-    # foo4: list[str]
+    foo4: list[str]
     # foo5: t.Optional[int]
     # foo6: dict[str, int]
 
@@ -27,9 +27,10 @@ class Foo:
 
 
 @core.watch((Foo, "foo1"), (Foo, "foo2"))
-def watch_values(inst, name: str, old, new) -> bool:
+def watch_values(inst, name: str, old, new):
     print(f"watch_values: {inst}.{name}, {old} -> {new}")
-    return True
+    if name == "foo1" and new == "hi":
+        raise ValueError("foo1 cannot be 'hi'")
 
 
 class TestSchema(unittest.TestCase):
@@ -61,18 +62,29 @@ class TestSchema(unittest.TestCase):
         pprint(core.__schemas__)
 
         foo.foo4 = ["a", "b", "c"]
-        foo.bar = Foo.EmbeddedSchema()
-        foo.bar.bar1 = "world"
-        foo.bar.bar2 = 20
-        foo.bar.bar3 = False
+        try:
+            foo.foo4 = ["a", "b", "c", 1]
+        except TypeError as e:
+            # expected
+            pass
+        else:
+            raise AssertionError("ValueError not raised")
+        foo.bar = {
+            "bar1": "world",
+            "bar2": 20,
+            "bar3": False,
+        }
+        foo.bar.bar1 = "world2"
+        foo.bar.bar2 = 30
+        foo.bar.bar3 = True
 
-        assert foo.foo1 == "hello"
-        assert foo.foo2 == 0
+        assert foo.foo1 == "hello2"
+        assert foo.foo2 == 1
         assert foo.foo3 == True
         assert foo.foo4 == ["a", "b", "c"]
-        assert foo.bar.bar1 == "world"
-        assert foo.bar.bar2 == 20
-        assert foo.bar.bar3 == False
+        assert foo.bar.bar1 == "world2"
+        assert foo.bar.bar2 == 30
+        assert foo.bar.bar3 == True
 
         try:
             foo.foo1 = "world"
@@ -82,7 +94,7 @@ class TestSchema(unittest.TestCase):
         try:
             foo.foo1 = "hi"
         except ValueError as e:
-            pass
+            print("expected value: ", e)
         else:
             raise AssertionError("ValueError not raised")
 

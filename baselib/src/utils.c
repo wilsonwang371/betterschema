@@ -39,12 +39,17 @@ PyObject *PySchema_GetAnnotations(PyObject *obj) {
   if (PyType_Check(obj) == 0) {
     type = Py_TYPE(obj);
   } else {
+    // type object
     type = (PyTypeObject *)obj;
   }
+  if (type == NULL) {
+    fprintf(stderr, "Failed to get type in get annotations\n");
+    return NULL;
+  }
+
   PyObject *annotations =
       PyDict_GetItemString(type->tp_dict, "__annotations__");
   if (annotations == NULL) {
-    fprintf(stderr, "__annotations__ not found\n");
     PyErr_SetString(PyExc_AttributeError, "__annotations__ not found");
     return NULL;
   } else {
@@ -79,15 +84,75 @@ PyObject *PySchema_GetAnnotationType(PyObject *obj, const char *attr) {
 
   PyObject *typeval = PyDict_GetItemString(annotations, attr);
   if (typeval == NULL) {
-    fprintf(stderr, "Failed to get type\n");
+    fprintf(stderr, "Failed to get type while getting item %s\n", attr);
     return NULL;
   }
   if (PyType_Check(typeval) == 0) {
-    fprintf(stderr, "Failed to get type\n");
-    return NULL;
+    // check if it is a type.GerericAlias
+    if (PyObject_HasAttrString(typeval, "__origin__")) {
+      PyObject *origin = PyObject_GetAttrString(typeval, "__origin__");
+      if (PyType_Check(origin) == 0) {
+        fprintf(stderr, "Failed to get origin\n");
+        return NULL;
+      }
+      // if it is a list or dict type, return typeval
+      if ((PyTypeObject *)origin == &PyList_Type ||
+          (PyTypeObject *)origin == &PyDict_Type) {
+        return origin;
+      }
+    } else {
+      fprintf(stderr, "Failed type checking\n");
+      return NULL;
+    }
   }
 
   return typeval;
+}
+
+PyObject *PySchema_GetAnnotationElementType(PyObject *obj, const char *attr) {
+  PyObject *annotations = PySchema_GetAnnotations(obj);
+  if (annotations == NULL) {
+    fprintf(stderr,
+            "Failed to get annotations while getting annotation type\n");
+    return NULL;
+  }
+
+  PyObject *typeval = PyDict_GetItemString(annotations, attr);
+  if (typeval == NULL) {
+    fprintf(stderr, "Failed to get type while getting item %s\n", attr);
+    return NULL;
+  }
+  if (PyType_Check(typeval) == 0) {
+    // check if it is a type.GerericAlias
+    if (PyObject_HasAttrString(typeval, "__origin__")) {
+      PyObject *origin = PyObject_GetAttrString(typeval, "__origin__");
+      if (PyType_Check(origin) == 0) {
+        fprintf(stderr, "Failed to get origin\n");
+        return NULL;
+      }
+      // if it is a list or dict type, return typeval
+      if ((PyTypeObject *)origin == &PyList_Type) {
+        // get __args__[0] from typeval
+        PyObject *args = PyObject_GetAttrString(typeval, "__args__");
+        if (args == NULL) {
+          fprintf(stderr, "Failed to get args\n");
+          return NULL;
+        }
+        PyObject *element_type = PyTuple_GetItem(args, 0);
+        if (element_type == NULL) {
+          fprintf(stderr, "Failed to get element type\n");
+          return NULL;
+        }
+        return element_type;
+      } else if ((PyTypeObject *)origin == &PyDict_Type) {
+        // TODO: get the element type of the dict
+        fprintf(stderr, "Dict type not supported yet\n");
+        return NULL;
+      }
+    }
+  }
+
+  return NULL;
 }
 
 AnnotationDataType PySchema_GetAnnotationValType(PyObject *obj,
@@ -102,11 +167,11 @@ AnnotationDataType PySchema_GetAnnotationValType(PyObject *obj,
 
   PyObject *typeval = PyDict_GetItemString(annotations, attr);
   if (typeval == NULL) {
-    fprintf(stderr, "Failed to get type\n");
+    fprintf(stderr, "Failed to get type while getting item %s\n", attr);
     return TYPE_UNKNOWN;
   }
   if (PyType_Check(typeval) == 0) {
-    fprintf(stderr, "Failed to get type\n");
+    fprintf(stderr, "Failed type checking\n");
     return TYPE_UNKNOWN;
   }
 
@@ -133,26 +198,27 @@ int PySchema_IsValidAnnotations(PyObject *annotations) {
   }
 
   while (PyDict_Next(annotations, &pos, &key, &value)) {
-    PyObject *key_str = PyObject_Str(key);
-    PyObject *value_str = PyObject_GetName(value);
+    // check if value has origin
+    if (PyObject_HasAttrString(value, "__origin__")) {
+      PyObject *origin = PyObject_GetAttrString(value, "__origin__");
+      if (PyType_Check(origin) == 0) {
+        sprintf(error_msg, "Failed to get origin");
+        PyErr_SetString(PyExc_AttributeError, error_msg);
+        return 0;
+      }
+      value = origin;
+    }
 
-    switch (PySchema_ConvertStrToAnnoType(PyUnicode_AsUTF8(value_str))) {
-    case TYPE_INT:
-    case TYPE_FLOAT:
-    case TYPE_STR:
-    case TYPE_BOOL:
-      break;
-    case TYPE_UNKNOWN:
-      if (!PyDict_Contains(schema, value_str)) {
-        sprintf(error_msg, "Unsupported type: %s", PyUnicode_AsUTF8(value_str));
+    // check if primitive type
+    if (!PySchema_IsPrimitiveType(value)) {
+      // check if schema type
+      if (!PySchema_IsSchemaType(value)) {
+        sprintf(error_msg, "Unsupported type: %s",
+                PyUnicode_AsUTF8(PyObject_Str(value)));
         PyErr_SetString(PyExc_TypeError, error_msg);
         return 0;
       }
-      break;
     }
-
-    Py_DECREF(key_str);
-    Py_DECREF(value_str);
   }
   return 1;
 }

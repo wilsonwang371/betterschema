@@ -15,11 +15,12 @@ int PySchema_IsPrimitiveType(PyObject *obj) {
   if ((PyTypeObject *)obj == &PyLong_Type ||
       (PyTypeObject *)obj == &PyFloat_Type ||
       (PyTypeObject *)obj == &PyUnicode_Type ||
-      (PyTypeObject *)obj == &PyBool_Type) {
+      (PyTypeObject *)obj == &PyBool_Type ||
+      (PyTypeObject *)obj == &PyList_Type ||
+      (PyTypeObject *)obj == &PyDict_Type) {
     return 1;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 int PySchema_IsSchemaType(PyObject *obj) {

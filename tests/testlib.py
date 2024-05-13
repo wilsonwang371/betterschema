@@ -6,6 +6,7 @@ import typing as t
 
 # faulthandler.enable()
 
+
 @core.schema
 class DEF:
     x: int

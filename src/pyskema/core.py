@@ -10,7 +10,8 @@ def _schema(cls):
         raise ValueError("schema must be a class")
     if not hasattr(cls, "__annotations__"):
         raise ValueError("schema must be a class with __annotations__")
-    return baselib.schema(cls)
+    res = baselib.schema(cls)
+    return res
 
 
 def _watch(*args):

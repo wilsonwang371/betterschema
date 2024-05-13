@@ -149,7 +149,9 @@ PyObject *watch(PyObject *self, PyObject *args) {
 // This function is called when an attribute is updated
 // it will trigger all the watch functions for the attribute
 // if error occurs, it will return negative value
-int PyWatch_OnAttributeUpdate(PyObject* instance, const char *attr, const PyObject *old_value, const PyObject *new_value) {
+int PyWatch_OnAttributeUpdate(PyObject *instance, const char *attr,
+                              const PyObject *old_value,
+                              const PyObject *new_value) {
   PyObject *class = PyObject_Type(instance);
   if (class == NULL) {
     return -1;
@@ -170,7 +172,8 @@ int PyWatch_OnAttributeUpdate(PyObject* instance, const char *attr, const PyObje
     if (func == NULL) {
       return -1;
     }
-    PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr), old_value, new_value);
+    PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr),
+                                  old_value, new_value);
     if (args == NULL) {
       return -1;
     }
@@ -180,6 +183,6 @@ int PyWatch_OnAttributeUpdate(PyObject* instance, const char *attr, const PyObje
     }
     Py_DECREF(result);
   }
-  
+
   return 0;
 }
