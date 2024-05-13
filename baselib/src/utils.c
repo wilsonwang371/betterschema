@@ -155,38 +155,6 @@ PyObject *PySchema_GetAnnotationElementType(PyObject *obj, const char *attr) {
   return NULL;
 }
 
-AnnotationDataType PySchema_GetAnnotationValType(PyObject *obj,
-                                                 const char *attr) {
-  AnnotationDataType result = TYPE_UNKNOWN;
-  PyObject *annotations = PySchema_GetAnnotations(obj);
-  if (annotations == NULL) {
-    fprintf(stderr,
-            "Failed to get annotations while getting annotation type\n");
-    assert(0);
-  }
-
-  PyObject *typeval = PyDict_GetItemString(annotations, attr);
-  if (typeval == NULL) {
-    fprintf(stderr, "Failed to get type while getting item %s\n", attr);
-    return TYPE_UNKNOWN;
-  }
-  if (PyType_Check(typeval) == 0) {
-    fprintf(stderr, "Failed type checking\n");
-    return TYPE_UNKNOWN;
-  }
-
-  // get type name
-  const char *type_name = PyObject_GetNameStr((PyObject *)typeval);
-  if (type_name == NULL) {
-    fprintf(stderr, "Failed to get type name\n");
-    return TYPE_UNKNOWN;
-  }
-
-  result = PySchema_ConvertStrToAnnoType(type_name);
-  Py_DECREF(typeval);
-  return result;
-}
-
 int PySchema_IsValidAnnotations(PyObject *annotations) {
   PyObject *key, *value;
   PyObject *schema = PySchema_GetRegisteredSchemas();
