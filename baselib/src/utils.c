@@ -145,9 +145,19 @@ PyObject *PySchema_GetAnnotationElementType(PyObject *obj, const char *attr) {
         }
         return element_type;
       } else if ((PyTypeObject *)origin == &PyDict_Type) {
-        // TODO: get the element type of the dict
-        fprintf(stderr, "Dict type not supported yet\n");
-        return NULL;
+        // return (key, value) tuple object
+        PyObject *args = PyObject_GetAttrString(typeval, "__args__");
+        if (args == NULL) {
+          fprintf(stderr, "Failed to get args\n");
+          return NULL;
+        }
+        PyObject *key_type = PyTuple_GetItem(args, 0);
+        PyObject *value_type = PyTuple_GetItem(args, 1);
+        if (key_type == NULL || value_type == NULL) {
+          fprintf(stderr, "Failed to get key or value type\n");
+          return NULL;
+        }
+        return PyTuple_Pack(2, key_type, value_type);
       }
     }
   }

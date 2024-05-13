@@ -47,7 +47,7 @@ int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
     if (right_type == NULL) {
       return -1;
     }
-    // TODO: deal with Sehema = dict case
+
     if (PyObject_RichCompareBool(left_type, right_type, Py_EQ) == 0) {
       // left and right types are not equal
       // we check if left is a class type and right is an instance of dict

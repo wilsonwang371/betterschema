@@ -15,7 +15,7 @@ class Foo:
     foo3: bool
     foo4: list[str]
     # foo5: t.Optional[int]
-    # foo6: dict[str, int]
+    foo6: dict[str, int]
 
     @core.schema
     class EmbeddedSchema:
@@ -57,6 +57,7 @@ class TestSchema(unittest.TestCase):
         foo.foo1 = "hello2"
         foo.foo2 = 1
         foo.foo3 = True
+        foo.foo6 = {"a": 1, "b": 2}
 
         pprint(core.__watches__)
         pprint(core.__schemas__)
@@ -65,10 +66,17 @@ class TestSchema(unittest.TestCase):
         try:
             foo.foo4 = ["a", "b", "c", 1]
         except TypeError as e:
-            # expected
-            pass
+            print("expected value: ", e)
         else:
             raise AssertionError("ValueError not raised")
+
+        try:
+            foo.foo6 = {"a": 1, "b": 2, "c": "3"}
+        except TypeError as e:
+            print("expected value: ", e)
+        else:
+            raise AssertionError("ValueError not raised")
+
         foo.bar = {
             "bar1": "world",
             "bar2": 20,

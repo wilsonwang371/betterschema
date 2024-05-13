@@ -106,9 +106,37 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
         }
       }
     } else if ((PyTypeObject *)anno_type == &PyDict_Type) {
-      // TODO: check the element type of the dict
-      fprintf(stderr, "Dict type not supported yet\n");
-      return -1;
+      // get key type and value type from return tuple
+      PyObject *anno_element_tuple =
+          PySchema_GetAnnotationElementType(self, name_str_c);
+      if (anno_element_tuple == NULL) {
+        return -1;
+      }
+      PyObject *anno_key_type = PyTuple_GetItem(anno_element_tuple, 0);
+      PyObject *anno_value_type = PyTuple_GetItem(anno_element_tuple, 1);
+      // iterate each item in value and check if the type is correct
+      PyObject *key, *item;
+      Py_ssize_t pos = 0;
+      while (PyDict_Next(value, &pos, &key, &item)) {
+        PyObject *key_type = PyObject_Type(key);
+        PyObject *item_type = PyObject_Type(item);
+        if (PyObject_RichCompareBool(anno_key_type, key_type, Py_EQ) == 0) {
+          char error_msg[100];
+          sprintf(error_msg, "Expected dict key type %s, got %s",
+                  PyObject_GetNameStr(anno_key_type),
+                  PyObject_GetNameStr(key_type));
+          PyErr_SetString(PyExc_TypeError, error_msg);
+          return -1;
+        }
+        if (PyObject_RichCompareBool(anno_value_type, item_type, Py_EQ) == 0) {
+          char error_msg[100];
+          sprintf(error_msg, "Expected dict value type %s, got %s",
+                  PyObject_GetNameStr(anno_value_type),
+                  PyObject_GetNameStr(item_type));
+          PyErr_SetString(PyExc_TypeError, error_msg);
+          return -1;
+        }
+      }
     }
 
     PyObject *old_value = PyObject_GenericGetAttr(self, name);
