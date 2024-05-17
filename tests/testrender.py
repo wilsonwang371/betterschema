@@ -15,6 +15,7 @@ class ABC2:
     a: int
     b: str = 1
     c: bool
+    d: list[str]
     # d: t.Optional[int]  # not supported yet
     e: DEF2
 
@@ -28,6 +29,7 @@ class TestCore(unittest.TestCase):
                 "a": 10,
                 "b": "hello",
                 "c": True,
+                "d": ["a", "b", "c"],
                 "e": {
                     "x": 10,
                     "y": "hello",
