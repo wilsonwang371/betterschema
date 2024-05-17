@@ -1,7 +1,11 @@
 import logging
 import pyskema.baselib as baselib
+from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+
+optional = Optional
 
 
 def _schema(cls):
@@ -42,4 +46,4 @@ watch = _watch
 __watches__ = baselib.__watches__
 __schemas__ = baselib.__schemas__
 
-__all__ = ["schema", "watch", "__watches__", "__schemas__"]
+__all__ = ["optional", "schema", "watch", "__watches__", "__schemas__"]

@@ -14,7 +14,7 @@ class Foo:
     foo2: int
     foo3: bool
     foo4: list[str]
-    # foo5: t.Optional[int]
+    foo5: core.optional[int]
     foo6: dict[str, int]
 
     @core.schema
@@ -38,12 +38,24 @@ class TestSchema(unittest.TestCase):
     def test_schema(self):
         # not supported yet
         print(dir(Foo))
+        try:
+            foo = Foo(
+                {
+                    "foo1": "hello",
+                    "foo2": 0,
+                }
+            )
+        except AttributeError as e:
+            print("expected value: ", e)
+        else:
+            raise AssertionError("AttributeError not raised")
         foo = Foo(
             {
                 "foo1": "hello",
                 "foo2": 0,
                 "foo3": True,
-                # "foo4": ["a", "b", "c"],
+                "foo4": ["a", "b", "c"],
+                "foo6": {"a": 1, "b": 2},
                 "bar": Foo.EmbeddedSchema(
                     {
                         "bar1": "world",
@@ -106,50 +118,50 @@ class TestSchema(unittest.TestCase):
         else:
             raise AssertionError("ValueError not raised")
 
-        foo <<= {"foo2": 1}
+        foo << {"foo2": 1}
         assert foo.foo2 == 1
 
-        foo <<= {"foo2": 2, "foo3": False}
+        foo << {"foo2": 2, "foo3": False}
         assert foo.foo2 == 2
         assert foo.foo3 == False
 
-        foo <<= {"foo4": ["d", "e", "f"]}
+        foo << {"foo4": ["d", "e", "f"]}
         assert foo.foo4 == ["d", "e", "f"]
 
-        foo <<= {"bar": {"bar1": "hello", "bar2": 10, "bar3": True}}
+        foo << {"bar": {"bar1": "hello", "bar2": 10, "bar3": True}}
         assert foo.bar.bar1 == "hello"
         assert foo.bar.bar2 == 10
         assert foo.bar.bar3 == True
 
         try:
-            foo <<= {"random": "value"}
+            foo << {"random": "value"}
         except AttributeError as e:
             pass
         else:
             raise AssertionError("ValueError not raised")
 
         try:
-            foo <<= {"foo2": "value"}
-        except ValueError as e:
+            foo << {"foo2": "value"}
+        except TypeError as e:
             pass
         else:
-            raise AssertionError("ValueError not raised")
+            raise AssertionError("TypeError not raised")
 
         try:
-            foo <<= {"foo4": "value"}
-        except ValueError as e:
+            foo << {"foo4": "value"}
+        except TypeError as e:
             pass
         else:
-            raise AssertionError("ValueError not raised")
+            raise AssertionError("TypeError not raised")
 
         try:
-            foo <<= {"bar": "value"}
-        except ValueError as e:
+            foo << {"bar": "value"}
+        except TypeError as e:
             pass
         else:
-            raise AssertionError("ValueError not raised")
+            raise AssertionError("TypeError not raised")
 
-        foo <<= {"bar": {"bar1": "hello", "bar2": 10, "bar3": "value"}}
+        foo << {"bar": {"bar1": "hello", "bar2": 10, "bar3": True}}
 
 
 if __name__ == "__main__":

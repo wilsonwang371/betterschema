@@ -31,10 +31,10 @@ int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
 
     // make sure the key is also inside the annotations
     if (!PySchema_ContainAnnotationKey(self, PyUnicode_AsUTF8(key_str))) {
-      char error_msg[100];
-      sprintf(error_msg, "Attribute \"%s\" not found in annotations",
-              PyUnicode_AsUTF8(key_str));
-      PyErr_SetString(PyExc_AttributeError, error_msg);
+      PyErr_SetString(
+          PyExc_AttributeError,
+          sprintf_static("Attribute \"%s\" not found in annotations",
+                         PyUnicode_AsUTF8(key_str)));
       return -1;
     }
 
@@ -60,11 +60,11 @@ int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
         }
         value = instance;
       } else {
-        char error_msg[100];
-        sprintf(error_msg, "Expected %s, got %s",
-                PyObject_GetNameStr(left_type),
-                PyObject_GetNameStr(right_type));
-        PyErr_SetString(PyExc_TypeError, error_msg);
+
+        PyErr_SetString(PyExc_TypeError,
+                        sprintf_static("Expected %s, got %s",
+                                       PyObject_GetNameStr(left_type),
+                                       PyObject_GetNameStr(right_type)));
         return -1;
       }
     }
@@ -74,6 +74,24 @@ int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
     }
 
     Py_DECREF(key_str);
+  }
+
+  // make sure all required attributes are set
+  pos = 0;
+  while (PyDict_Next(annotations, &pos, &key, &value)) {
+    if (!PySchema_IsAnnotationKeyOptional(self, PyUnicode_AsUTF8(key))) {
+      // make sure attribute is not none
+      PyObject *attr = PyObject_GenericGetAttr(self, key);
+      if (attr == NULL) {
+        return -1;
+      }
+      if (attr == Py_None) {
+        PyErr_SetString(PyExc_AttributeError,
+                        sprintf_static("Attribute \"%s\" is required",
+                                       PyUnicode_AsUTF8(key)));
+        return -1;
+      }
+    }
   }
 
   UNUSED(kwds);
