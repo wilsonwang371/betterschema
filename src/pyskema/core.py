@@ -6,6 +6,14 @@ logger = logging.getLogger(__name__)
 
 
 optional = Optional
+__watches__ = baselib.__watches__
+__schemas__ = baselib.__schemas__
+
+
+def is_schema_instance(schema_instance):
+    if type(schema_instance).__name__ not in __schemas__:
+        return False
+    return type(schema_instance).__name__ in __schemas__
 
 
 def _schema(cls):
@@ -43,7 +51,12 @@ def _watch(*args):
 schema = _schema
 watch = _watch
 
-__watches__ = baselib.__watches__
-__schemas__ = baselib.__schemas__
 
-__all__ = ["optional", "schema", "watch", "__watches__", "__schemas__"]
+__all__ = [
+    "optional",
+    "schema",
+    "watch",
+    "__watches__",
+    "__schemas__",
+    "is_schema_instance",
+]

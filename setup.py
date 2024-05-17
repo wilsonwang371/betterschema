@@ -23,7 +23,9 @@ setup(
     setup_requires=[
         "build",
     ],
-    install_requires=[],
+    install_requires=[
+        "pyyaml",
+    ],
     extras_require={
         "dev": [
             "unittest",
