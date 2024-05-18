@@ -1,5 +1,5 @@
 import unittest
-import pyskema.core as core
+import betterschema.core as core
 import typing as t
 
 # import faulthandler

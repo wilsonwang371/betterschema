@@ -3,7 +3,7 @@ import os
 
 
 module = Extension(
-    "pyskema.baselib",
+    "betterschema.baselib",
     # all c files in the lib/src directory
     sources=[
         os.path.join("baselib", "src", f)
@@ -17,9 +17,12 @@ module = Extension(
 
 
 setup(
-    name="pyskema",
+    name="betterschema",
     version="0.1.0",
     author="Wilson Wang",
+    project_urls={
+        'Source': 'https://github.com/wilsonwang371/betterschema',
+    },
     author_email="wilsonny371@gmail.com",
     description="A library for schema support in Python",
     packages=find_packages(where="src", exclude=["tests"]),

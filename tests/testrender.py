@@ -1,6 +1,6 @@
 import unittest
-import pyskema.core as core
-import pyskema.render as render
+import betterschema.core as core
+import betterschema.render as render
 
 
 @core.schema

@@ -13,8 +13,8 @@ static PyMethodDef Methods[] = {
 };
 
 static struct PyModuleDef module = {PyModuleDef_HEAD_INIT,
-                                    "pyskema", // Name of the module
-                                    "pyskema module for Python C API",
+                                    "betterschema", // Name of the module
+                                    "betterschema module for Python C API",
                                     -1,
                                     Methods,
                                     NULL,

@@ -1,7 +1,7 @@
 
-# pyskema
+# betterschema
 
-pyskema is a schema validation and data watching framework for Python. It allows you to define data schemas, validate data against these schemas, and watch for changes in the data with custom watchers.
+betterschema is a schema validation and data watching framework for Python. It allows you to define data schemas, validate data against these schemas, and watch for changes in the data with custom watchers.
 
 ## Features
 
@@ -14,18 +14,18 @@ pyskema is a schema validation and data watching framework for Python. It allows
 
 ## Installation
 
-You can install pyskema via pip:
+You can install betterschema via pip:
 
 ```sh
-pip install pyskema
+pip install betterschema
 ```
 
 ## Usage
 
-Here's a simple example of how to use pyskema:
+Here's a simple example of how to use betterschema:
 
 ```python
-import pyskema.core as core
+import betterschema.core as core
 
 @core.schema
 class Foo:
