@@ -19,6 +19,9 @@ module = Extension(
 setup(
     name="pyskema",
     version="0.1.0",
+    author="Wilson Wang",
+    author_email="wilsonny371@gmail.com",
+    description="A library for schema support in Python",
     packages=find_packages(where="src", exclude=["tests"]),
     setup_requires=[
         "build",
