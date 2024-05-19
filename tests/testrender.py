@@ -8,6 +8,8 @@ from betterschema import core, render
 
 @core.schema
 class DEF2:
+    """DEF schema"""
+
     x: int
     y: str
     z: bool
@@ -15,6 +17,8 @@ class DEF2:
 
 @core.schema
 class ABC2:
+    """ABC schema"""
+
     a: int
     b: str = 1
     c: bool
@@ -24,7 +28,11 @@ class ABC2:
 
 
 class TestCore(unittest.TestCase):
+    """Test core module"""
+
     def test_rendermodule(self):
+        """Test render module"""
+
         print(str(ABC2.__annotations__))
 
         a = ABC2(

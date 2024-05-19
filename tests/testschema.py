@@ -1,7 +1,6 @@
 """ Test for betterschema.core """
 
-# pylint: disable=E1101
-import typing as t
+# pylint: disable=E1101, W0104
 import unittest
 from pprint import pprint
 
@@ -10,6 +9,8 @@ from betterschema import core
 
 @core.schema
 class Foo:
+    """Foo schema"""
+
     foo1: str
     foo2: int
     foo3: bool
@@ -19,6 +20,8 @@ class Foo:
 
     @core.schema
     class EmbeddedSchema:
+        """Embedded schema"""
+
         bar1: str
         bar2: int
         bar3: bool
@@ -28,15 +31,17 @@ class Foo:
 
 @core.watch((Foo, "foo1"), (Foo, "foo2"))
 def watch_values(inst, name: str, old, new):
+    """Watch values"""
     print(f"watch_values: {inst}.{name}, {old} -> {new}")
     if name == "foo1" and new == "hi":
         raise ValueError("foo1 cannot be 'hi'")
 
 
 class TestSchema(unittest.TestCase):
+    """Test core module"""
 
     def test_schema(self):
-        # not supported yet
+        """Test schema"""
         print(dir(Foo))
         try:
             foo = Foo(
@@ -109,7 +114,8 @@ class TestSchema(unittest.TestCase):
         try:
             foo.foo1 = "world"
         except ValueError as e:
-            raise AssertionError("ValueError not raised")
+            # reraise the exception
+            raise e
 
         try:
             foo.foo1 = "hi"
