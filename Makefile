@@ -25,7 +25,10 @@ clean:
 
 # build wheel using pip
 build: clean
-	python -m build --wheel --sdist
+	python -m build --sdist
+
+build-wheel: clean
+	python -m build --wheel
 
 install: build
 	python3 -m pip install $(PROJECT_DIR)/dist/*.whl
