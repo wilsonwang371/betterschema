@@ -1,6 +1,6 @@
 """Test render module."""
 
-# pylint: disable=E1101
+# pylint: disable=E1101, R0903, E1136
 import unittest
 
 from betterschema import core, render

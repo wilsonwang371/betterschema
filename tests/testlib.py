@@ -1,7 +1,6 @@
 """ Test the core module """
 
-# pylint: disable=E1101
-import typing as t
+# pylint: disable=E1101, R0903, W0201
 import unittest
 
 from betterschema import core
