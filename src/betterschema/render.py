@@ -1,3 +1,5 @@
+"""render yaml and json from schema instance."""
+
 from enum import Enum
 import betterschema.core as core
 from pprint import pprint

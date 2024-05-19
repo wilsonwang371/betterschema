@@ -1,3 +1,5 @@
+"""Test render module."""
+
 import unittest
 import betterschema.core as core
 import betterschema.render as render

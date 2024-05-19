@@ -1,10 +1,8 @@
+""" Test the core module """
+
 import unittest
 import betterschema.core as core
 import typing as t
-
-# import faulthandler
-
-# faulthandler.enable()
 
 
 @core.schema

@@ -1,3 +1,5 @@
+""" core module """
+
 import logging
 import betterschema.baselib as baselib
 from typing import Optional

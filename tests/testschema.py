@@ -1,3 +1,5 @@
+""" Test for betterschema.core """
+
 import betterschema.core as core
 import typing as t
 import unittest

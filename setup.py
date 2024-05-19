@@ -1,3 +1,5 @@
+"""Setup script for the betterschema package."""
+
 from setuptools import setup, find_packages, Extension
 import os
 
