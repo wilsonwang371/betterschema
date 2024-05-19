@@ -18,13 +18,13 @@ module = Extension(
 
 setup(
     name="betterschema",
-    version="0.1.0",
+    version="0.1.1",
     author="Wilson Wang",
     project_urls={
-        'Source': 'https://github.com/wilsonwang371/betterschema',
+        "Source": "https://github.com/wilsonwang371/betterschema",
     },
     author_email="wilsonny371@gmail.com",
-    description="A library for schema support in Python",
+    description="A Python schema library that supports type checking and validation",
     packages=find_packages(where="src", exclude=["tests"]),
     setup_requires=[
         "build",
