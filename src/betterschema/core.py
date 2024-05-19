@@ -1,5 +1,6 @@
 """ core module """
 
+# pylint: disable=E0401, E0611
 import logging
 from typing import Optional
 
@@ -11,8 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 optional = Optional
-# __watches__ = baselib.__watches__
-# __schemas__ = baselib.__schemas__
 
 
 def is_schema_instance(schema_instance):

@@ -1,6 +1,6 @@
 """ Test for betterschema.core """
 
-# pylint: disable=E1101, W0104
+# pylint: disable=E1101, W0104, E1136
 import unittest
 from pprint import pprint
 
@@ -129,7 +129,7 @@ class TestSchema(unittest.TestCase):
 
         foo << {"foo2": 2, "foo3": False}
         assert foo.foo2 == 2
-        assert foo.foo3 == False
+        assert foo.foo3 is False
 
         foo << {"foo4": ["d", "e", "f"]}
         assert foo.foo4 == ["d", "e", "f"]
