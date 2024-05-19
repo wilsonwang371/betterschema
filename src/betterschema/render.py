@@ -1,5 +1,7 @@
 """render yaml and json from schema instance."""
 
+# pylint: disable=E0401
+
 import json
 from enum import Enum
 
