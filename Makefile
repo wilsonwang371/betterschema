@@ -13,7 +13,7 @@ all: format build
 format:
 	$(PROJECT_DIR)/scripts/format.sh
 
-test: build
+test: build-wheel
 	PYTHONPATH=$(LIB_BUILD_DIR) python -m unittest $(PROJECT_DIR)/tests/test*.py
 
 clean:
