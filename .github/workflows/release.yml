@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  release_package:
     runs-on: ubuntu-latest
 
     steps:
@@ -38,12 +38,13 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
     - name: Bump version
-      run: bump2version patch
+      run: |
+        git config --local user.name 'github-actions[bot]'
+        git config --local user.email 'github-actions[bot]@users.noreply.github.com'
+        bump2version patch
     - name: Commit version bump
       run: |
         git add src/betterschema/__init__.py
-        git config --local user.name 'github-actions[bot]'
-        git config --local user.email 'github-actions[bot]@users.noreply.github.com'
         git commit -m "Bump version: $(bump2version --dry-run --list | grep new_version | sed -r s,"^.*=",,)"
         git push
       env:
