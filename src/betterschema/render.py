@@ -21,10 +21,9 @@ def render(schema_instance, render_type=RenderType.YAML):
         raise ValueError("Invalid schema instance")
     if render_type == RenderType.JSON:
         return render_json(schema_instance)
-    elif render_type == RenderType.YAML:
+    if render_type == RenderType.YAML:
         return render_yaml(schema_instance)
-    else:
-        raise ValueError("Invalid render type")
+    raise ValueError("Invalid render type")
 
 
 def object_to_dict(schema_instance):

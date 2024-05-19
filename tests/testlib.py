@@ -9,6 +9,8 @@ from betterschema import core
 
 @core.schema
 class DEF:
+    """DEF schema"""
+
     x: int
     y: str
     z: bool
@@ -16,6 +18,8 @@ class DEF:
 
 @core.schema
 class ABC:
+    """ABC schema"""
+
     a: int
     b: str = 1
     c: bool
@@ -24,7 +28,10 @@ class ABC:
 
 
 class TestCore(unittest.TestCase):
+    """Test core module"""
+
     def test_libmodule(self):
+        """Test lib module"""
         print(str(ABC.__annotations__))
 
         a = ABC(
