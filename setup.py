@@ -39,6 +39,8 @@ setup(
             "unittest",
             "black",
             "build",
+            "isort",
+            "pylint",
         ]
     },
     # only include from source directory
