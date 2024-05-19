@@ -1,14 +1,10 @@
 """ Test for betterschema.core """
 
 # pylint: disable=E1101
-import betterschema.core as core
+from betterschema import core
 import typing as t
 import unittest
 from pprint import pprint
-
-import faulthandler
-
-faulthandler.enable()
 
 
 @core.schema

@@ -2,7 +2,7 @@
 
 # pylint: disable=E1101
 import unittest
-import betterschema.core as core
+from betterschema import core
 import typing as t
 
 

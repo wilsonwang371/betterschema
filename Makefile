@@ -14,7 +14,7 @@ format:
 	$(PROJECT_DIR)/scripts/format.sh
 
 test: build
-	PYTHONPATH=$(LIB_BUILD_DIR) python -m unittest $(PROJECT_DIR)/tests/*.py
+	PYTHONPATH=$(LIB_BUILD_DIR) python -m unittest $(PROJECT_DIR)/tests/test*.py
 
 clean:
 	rm -rf $(PROJECT_DIR)/build

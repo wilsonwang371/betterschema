@@ -1,15 +1,17 @@
 """ core module """
 
 import logging
-from betterschema import baselib
+from betterschema.baselib import __watches__, __schemas__
+from betterschema.baselib import schema as baseschema
+from betterschema.baselib import watch as basewatch
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 optional = Optional
-__watches__ = baselib.__watches__
-__schemas__ = baselib.__schemas__
+# __watches__ = baselib.__watches__
+# __schemas__ = baselib.__schemas__
 
 
 def is_schema_instance(schema_instance):
@@ -25,7 +27,7 @@ def _schema(cls):
         raise ValueError("schema must be a class")
     if not hasattr(cls, "__annotations__"):
         raise ValueError("schema must be a class with __annotations__")
-    res = baselib.schema(cls)
+    res = baseschema(cls)
     return res
 
 
@@ -46,7 +48,7 @@ def _watch(*args):
             )
 
     def wrapper(func):
-        return baselib.watch(list(args), func)
+        return basewatch(list(args), func)
 
     return wrapper
 
