@@ -37,15 +37,4 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-    - name: Bump version
-      run: |
-        git config --local user.name 'github-actions[bot]'
-        git config --local user.email 'github-actions[bot]@users.noreply.github.com'
-        bump2version patch
-    - name: Commit version bump
-      run: |
-        git add src/betterschema/__init__.py
-        git commit -m "Bump version: $(bump2version --dry-run --list | grep new_version | sed -r s,"^.*=",,)"
-        git push
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
