@@ -2,6 +2,7 @@
 
 import os
 import sys
+import re
 
 from setuptools import Extension, find_packages, setup
 
@@ -27,10 +28,22 @@ else:
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+
+def read_version():
+    with open(
+        os.path.join(os.path.dirname(__file__), "src", "betterschema", "__init__.py")
+    ) as f:
+        version_file = f.read()
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
+
 setup(
     name="betterschema",
-    version="0.1.7",
     author="Wilson Wang",
+    version=read_version(),
     project_urls={
         "Source": "https://github.com/wilsonwang371/betterschema",
     },
@@ -52,6 +65,7 @@ setup(
             "build",
             "isort",
             "pylint",
+            "bump2version",
         ]
     },
     classifiers=[
