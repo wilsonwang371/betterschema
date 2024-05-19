@@ -1,4 +1,4 @@
-"""Setup script for the betterschema package."""
+"""Setup script for the BetterSchema package."""
 
 import os
 import sys

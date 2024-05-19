@@ -1,7 +1,7 @@
 
-# betterschema
+# BetterSchema
 
-betterschema is a schema validation and data watching framework for Python. It allows you to define data schemas, validate data against these schemas, and watch for changes in the data with custom watchers.
+BetterSchema is a schema validation and data watching framework for Python. It allows you to define data schemas, validate data against these schemas, and watch for changes in the data with custom watchers.
 
 ## Features
 
@@ -14,7 +14,7 @@ betterschema is a schema validation and data watching framework for Python. It a
 
 ## Installation
 
-You can install betterschema via pip:
+You can install BetterSchema via pip:
 
 ```sh
 pip install betterschema
