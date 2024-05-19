@@ -1,10 +1,6 @@
 name: Build
 
-on:
-  push:
-  pull_request:
-  release:
-    types: [published]
+on: [push, pull_request]
 
 jobs:
   build_wheels:
@@ -34,16 +30,3 @@ jobs:
       # to supply options, put them in 'env', like:
       # env:
       #   CIBW_SOME_OPTION: value
-
-    # conditional. do only if publish
-    - name: Publish wheels
-      if: github.event.action == 'published'
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
-
-    # bump version after publish
-    - name: Bump version
-      if: github.event.action == 'published'
-      run: bump2version patch

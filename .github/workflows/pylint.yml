@@ -3,7 +3,7 @@ name: Pylint
 on: [push]
 
 jobs:
-  build:
+  run_lint:
     name: Pylint
     runs-on: ubuntu-latest
     strategy:
