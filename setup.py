@@ -32,7 +32,7 @@ setup(
         "build",
     ],
     install_requires=[
-        "pyyaml",
+        "PyYAML",
     ],
     extras_require={
         "dev": [
