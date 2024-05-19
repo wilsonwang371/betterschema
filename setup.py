@@ -17,6 +17,8 @@ module = Extension(
     extra_link_args=["-O3", "-Wall", "-Wextra", "-Werror", "-std=c11"],
 )
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
 
 setup(
     name="betterschema",
@@ -27,6 +29,8 @@ setup(
     },
     author_email="wilsonny371@gmail.com",
     description="A Python schema library that supports type checking and validation",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     packages=find_packages(where="src", exclude=["tests"]),
     setup_requires=[
         "build",
@@ -43,6 +47,10 @@ setup(
             "pylint",
         ]
     },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+    ],
     # only include from source directory
     package_dir={"": "src"},
     ext_modules=[module],
