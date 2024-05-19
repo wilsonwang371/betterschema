@@ -3,13 +3,6 @@
 
 // Get the current thread frame global and local
 int PySys_GetGlobalLocal(PyObject **pGlobal, PyObject **pLocal) {
-  // Get the current frame
-  // PyFrameObject *currentFrame = PyEval_GetFrame();
-  // if (currentFrame == NULL) {
-  //   PyErr_SetString(PyExc_RuntimeError, "Failed to get the current frame");
-  //   return 0;
-  // }
-
   // Access the global and local dictionaries
   *pGlobal = PyEval_GetGlobals();
   *pLocal = PyEval_GetLocals();
