@@ -177,6 +177,7 @@ PyObject *schema(PyObject *self, PyObject *args) {
     goto out;
   }
   strncpy(class_name, obj_name, CLASS_NAME_MAX_LEN);
+  class_name[CLASS_NAME_MAX_LEN - 1] = '\0';
   if (strlen(class_name) == 0) {
     PyErr_SetString(PyExc_AttributeError, "__name__ not found");
     err = 1;
@@ -209,7 +210,7 @@ PyObject *schema(PyObject *self, PyObject *args) {
   class_type->tp_init = PySchema_ClassInit;
   class_type->tp_as_number = &PySchema_NumberMethods;
 
-  if (PySchema_SetAnnotations(class, annotations) < 0) {
+  if (PySchema_SetAnnotations(class, annotations) == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to set annotations");
     err = 1;
     goto out;
