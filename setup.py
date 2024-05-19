@@ -1,8 +1,8 @@
 """Setup script for the betterschema package."""
 
-from setuptools import setup, find_packages, Extension
 import os
 
+from setuptools import Extension, find_packages, setup
 
 module = Extension(
     "betterschema.baselib",

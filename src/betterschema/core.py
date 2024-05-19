@@ -1,10 +1,11 @@
 """ core module """
 
 import logging
-from betterschema.baselib import __watches__, __schemas__
+from typing import Optional
+
+from betterschema.baselib import __schemas__, __watches__
 from betterschema.baselib import schema as baseschema
 from betterschema.baselib import watch as basewatch
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

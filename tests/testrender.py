@@ -2,6 +2,7 @@
 
 # pylint: disable=E1101
 import unittest
+
 from betterschema import core, render
 
 

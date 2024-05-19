@@ -1,10 +1,11 @@
 """ Test for betterschema.core """
 
 # pylint: disable=E1101
-from betterschema import core
 import typing as t
 import unittest
 from pprint import pprint
+
+from betterschema import core
 
 
 @core.schema
