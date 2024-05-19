@@ -1,7 +1,7 @@
 """ core module """
 
 import logging
-import betterschema.baselib as baselib
+from betterschema import baselib
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -13,6 +13,7 @@ __schemas__ = baselib.__schemas__
 
 
 def is_schema_instance(schema_instance):
+    """Check if the schema instance is a schema instance."""
     if type(schema_instance).__name__ not in __schemas__:
         return False
     return type(schema_instance).__name__ in __schemas__
