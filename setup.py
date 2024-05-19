@@ -20,7 +20,7 @@ module = Extension(
 
 setup(
     name="betterschema",
-    version="0.1.2",
+    version="0.1.3",
     author="Wilson Wang",
     project_urls={
         "Source": "https://github.com/wilsonwang371/betterschema",
