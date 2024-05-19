@@ -141,6 +141,3 @@ Contributions are welcome! Please submit a pull request or open an issue to disc
 
 This project is licensed under the MIT License.
 
----
-
-Feel free to adjust this README as per your specific requirements and add any additional sections you deem necessary.
