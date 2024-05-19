@@ -99,11 +99,11 @@ class TestSchema(unittest.TestCase):
 
         assert foo.foo1 == "hello2"
         assert foo.foo2 == 1
-        assert foo.foo3 == True
+        assert foo.foo3 is True
         assert foo.foo4 == ["a", "b", "c"]
         assert foo.bar.bar1 == "world2"
         assert foo.bar.bar2 == 30
-        assert foo.bar.bar3 == True
+        assert foo.bar.bar3 is True
 
         try:
             foo.foo1 = "world"
@@ -130,7 +130,7 @@ class TestSchema(unittest.TestCase):
         foo << {"bar": {"bar1": "hello", "bar2": 10, "bar3": True}}
         assert foo.bar.bar1 == "hello"
         assert foo.bar.bar2 == 10
-        assert foo.bar.bar3 == True
+        assert foo.bar.bar3 is True
 
         try:
             foo << {"random": "value"}

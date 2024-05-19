@@ -40,11 +40,11 @@ class TestCore(unittest.TestCase):
         )
         assert a.a == 10
         assert a.b == "hello"
-        assert a.c == True
+        assert a.c is True
         print(a.e)
         assert a.e.x == 10
         assert a.e.y == "hello"
-        assert a.e.z == True
+        assert a.e.z is True
 
         print(a.__annotations__)
         a.a = 10
