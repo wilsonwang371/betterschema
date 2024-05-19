@@ -1,6 +1,7 @@
 """Setup script for the betterschema package."""
 
 import os
+import sys
 
 from setuptools import Extension, find_packages, setup
 
@@ -13,9 +14,15 @@ module = Extension(
         if f.endswith(".c")
     ],
     include_dirs=["baselib/include"],
-    extra_compile_args=["-O3", "-Wall", "-Wextra", "-Werror", "-std=c11"],
-    extra_link_args=["-O3", "-Wall", "-Wextra", "-Werror", "-std=c11"],
+    extra_compile_args=["-O3", "-Wall", "-Werror", "-std=c11"],
+    extra_link_args=["-O3", "-Wall", "-Werror", "-std=c11"],
 )
+
+# Add compiler-specific options
+if sys.platform == "win32":
+    module.extra_compile_args = ["/W4"]
+else:
+    module.extra_compile_args = ["-Wextra"]
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
