@@ -22,7 +22,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="betterschema",
-    version="0.1.4",
+    version="0.1.5",
     author="Wilson Wang",
     project_urls={
         "Source": "https://github.com/wilsonwang371/betterschema",
