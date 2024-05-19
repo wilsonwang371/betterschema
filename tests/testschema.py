@@ -1,5 +1,6 @@
 """ Test for betterschema.core """
 
+# pylint: disable=E1101
 import betterschema.core as core
 import typing as t
 import unittest
