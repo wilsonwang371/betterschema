@@ -30,8 +30,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 
 def read_version():
+    """Read the version from the package __init__ file."""
     with open(
-        os.path.join(os.path.dirname(__file__), "src", "betterschema", "__init__.py")
+        os.path.join(os.path.dirname(__file__), "src", "betterschema", "__init__.py"),
+        "r",
+        encoding="utf-8",
     ) as f:
         version_file = f.read()
     version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
