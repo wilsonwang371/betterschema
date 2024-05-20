@@ -17,7 +17,7 @@ BetterSchema is a schema validation and data watching framework for Python. It a
 You can install BetterSchema via pip:
 
 ```sh
-pip install betterschema==0.1.17
+pip install betterschema==0.1.18
 ```
 
 ## Usage
