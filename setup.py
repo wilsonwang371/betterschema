@@ -12,17 +12,11 @@ module_cfiles = [
     if f.endswith(".c")
 ]
 
-module_hfiles = [
-    os.path.join("baselib", "include", f)
-    for f in os.listdir("baselib/include")
-    if f.endswith(".h")
-]
-
 module = Extension(
     "betterschema.baselib",
     # all c files in the lib/src directory
-    sources=module_cfiles + module_hfiles,
-    include_dirs=["baselib/include", "baselib/src"],
+    sources=module_cfiles,
+    include_dirs=["baselib/include"],
     extra_compile_args=["-O3", "-Wall", "-Werror", "-std=c11"],
     extra_link_args=["-O3", "-Wall", "-Werror", "-std=c11"],
 )
