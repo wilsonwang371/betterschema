@@ -23,8 +23,8 @@
     fprintf(stderr, "\033[0m");                                                \
   } while (0)
 
-// only on non windows platforms
-#if !defined(_WIN32) && !defined(_WIN64)
+// only on macos
+#if defined(__APPLE__) && defined(__MACH__)
 #include <execinfo.h>
 
 // helper-function to print the current stack trace
