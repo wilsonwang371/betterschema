@@ -2,9 +2,7 @@
 
 import logging
 import os
-import tempfile
 import urllib.request
-from enum import Enum
 from pprint import pformat, pprint
 
 import coloredlogs
