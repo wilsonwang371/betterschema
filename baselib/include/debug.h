@@ -27,12 +27,9 @@
 #if defined(__APPLE__) && defined(__MACH__)
 #include <execinfo.h>
 
-// helper-function to print the current stack trace
 inline void print_stacktrace() {
   void *buffer[MAX_STACK_LEVELS];
   int levels = backtrace(buffer, MAX_STACK_LEVELS);
-
-  // print to stderr (fd = 2), and remove this function from the trace
   backtrace_symbols_fd(buffer + 1, levels - 1, 2);
 }
 #else
