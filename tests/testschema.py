@@ -17,6 +17,7 @@ class Foo:
     foo4: list[str]
     foo5: core.optional[int]
     foo6: dict[str, int]
+    foo7: core.optional[core.union[int, str]]
 
     @core.schema
     class EmbeddedSchema:

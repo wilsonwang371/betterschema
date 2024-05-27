@@ -1,10 +1,9 @@
 #ifndef _INIT_H
 #define _INIT_H
 
+#include "debug.h"
 #include "schema.h"
 #include <Python.h>
-
-#define UNUSED(x) (void)(x)
 
 int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds);
 

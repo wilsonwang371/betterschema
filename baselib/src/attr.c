@@ -1,12 +1,13 @@
 #include "attr.h"
 #include "init.h"
+#include "schematypes.h"
 #include "utils.h"
 #include "watch.h"
 
 // getattr
 PyObject *PySchema_ClassDefGetAttr(PyObject *self, PyObject *name) {
   // get self annotations
-  if (PySchema_GetAnnotations(self) == NULL) {
+  if (PySchema_GetAnnoListObj(self) == NULL) {
     return NULL;
   }
 
@@ -17,7 +18,7 @@ PyObject *PySchema_ClassDefGetAttr(PyObject *self, PyObject *name) {
   Py_DECREF(name_str);
 
   // check if the attribute is in the annotations
-  int has_attr = PySchema_ContainAnnotationKey(self, name_str_c);
+  int has_attr = PySchema_ContainAnnoObj_ByCStr(self, name_str_c);
   if (!has_attr) {
     // check if the attribute has __ prefix
     if (name_str_c[0] == '_' && name_str_c[1] == '_') {
@@ -29,23 +30,24 @@ PyObject *PySchema_ClassDefGetAttr(PyObject *self, PyObject *name) {
     return NULL;
   }
 
-  PyObject *anno_type = PySchema_GetAnnotationType(self, name_str_c);
-  if (anno_type == NULL) {
+  PyObject *anno_obj = PySchema_GetAnnoObj_ByCStr(self, name_str_c);
+  if (anno_obj == NULL) {
     return NULL;
   }
-  if (PySchema_IsPrimitiveType(anno_type) || PySchema_IsSchemaType(anno_type)) {
-    return PyObject_GenericGetAttr(self, name);
+  SchemaType anno_type = PySchema_ToSchemaType_FromTypeObj(anno_obj);
+  if (anno_type == TypeInvalid) {
+    PyErr_SetString(
+        PyExc_TypeError,
+        sprintf_static("Unsupported type while getting attribute %s of type %s",
+                       name_str_c, ((PyTypeObject *)anno_obj)->tp_name));
+    return NULL;
   }
 
-  PyErr_SetString(
-      PyExc_TypeError,
-      sprintf_static("Unsupported type while getting attribute %s of type %s",
-                     name_str_c, ((PyTypeObject *)anno_type)->tp_name));
-  return NULL;
+  return PyObject_GenericGetAttr(self, name);
 }
 
-int PySchema_ValidDictType(PyObject *value, PyObject *anno_key_type,
-                           PyObject *anno_value_type) {
+int PySchema_IsValidDictInstance(PyObject *value, PyObject *anno_key_type,
+                                 PyObject *anno_value_type) {
   // make sure value is a dict type
   if (!PyDict_Check(value)) {
     PyErr_SetString(PyExc_TypeError, "Expected dict");
@@ -88,7 +90,7 @@ int PySchema_ValidDictType(PyObject *value, PyObject *anno_key_type,
   return 1;
 }
 
-int PySchema_ValidListType(PyObject *value, PyObject *anno_element_type) {
+int PySchema_IsValidListInstance(PyObject *value, PyObject *anno_element_type) {
   // make sure value is a list type
   if (!PyList_Check(value)) {
     PyErr_SetString(PyExc_TypeError, "Expected list");
@@ -120,7 +122,7 @@ int PySchema_ValidListType(PyObject *value, PyObject *anno_element_type) {
 // setattr
 int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
   // get self annotations
-  if (PySchema_GetAnnotations(self) == NULL) {
+  if (PySchema_GetAnnoListObj(self) == NULL) {
     return -1;
   }
 
@@ -131,7 +133,7 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
   Py_DECREF(name_str);
 
   // check if the attribute is in the annotations
-  int has_attr = PySchema_ContainAnnotationKey(self, name_str_c);
+  int has_attr = PySchema_ContainAnnoObj_ByCStr(self, name_str_c);
   if (!has_attr) {
     PyErr_SetString(
         PyExc_AttributeError,
@@ -144,77 +146,85 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
   if (right_type == NULL) {
     return -1;
   }
-  PyObject *anno_type = PySchema_GetAnnotationType(self, name_str_c);
-  if (anno_type == NULL) {
+  PyObject *anno_obj = PySchema_GetAnnoObj_ByCStr(self, name_str_c);
+  if (anno_obj == NULL) {
     return -1;
   }
-  if (PySchema_IsPrimitiveType(anno_type)) {
-    if (PyObject_RichCompareBool(anno_type, right_type, Py_EQ) == 0) {
+  SchemaType anno_type = PySchema_ToSchemaType_FromTypeObj(anno_obj);
+  if (anno_type == TypeInvalid) {
+    return -1;
+  }
+  switch (anno_type) {
+  case TypeInt:
+  case TypeFloat:
+  case TypeString:
+  case TypeBool:
+    if (PyObject_RichCompareBool(anno_obj, right_type, Py_EQ) == 0) {
       PyErr_SetString(PyExc_TypeError,
                       sprintf_static("Expected %s, got %s",
-                                     PyObject_GetNameStr(anno_type),
+                                     PyObject_GetNameStr(anno_obj),
                                      PyObject_GetNameStr(right_type)));
       return -1;
     }
-    // if dict or list, make sure the element type is correct
-    if ((PyTypeObject *)anno_type == &PyList_Type) {
-      // make sure the right side element type is correct
-      PyObject *anno_element_type =
-          PySchema_GetAnnotationElementType(self, name_str_c);
-      if (anno_element_type == NULL) {
-        return -1;
-      }
-
-      if (!PySchema_ValidListType(value, anno_element_type)) {
-        return -1;
-      }
-    } else if ((PyTypeObject *)anno_type == &PyDict_Type) {
-      // get key type and value type from return tuple
-      PyObject *anno_element_tuple =
-          PySchema_GetAnnotationElementType(self, name_str_c);
-      if (anno_element_tuple == NULL) {
-        return -1;
-      }
-      PyObject *anno_key_type = PyTuple_GetItem(anno_element_tuple, 0);
-      PyObject *anno_value_type = PyTuple_GetItem(anno_element_tuple, 1);
-      // iterate each item in value and check if the type is correct
-      if (!PySchema_ValidDictType(value, anno_key_type, anno_value_type)) {
-        return -1;
-      }
-    }
-
-    PyObject *old_value = PyObject_GenericGetAttr(self, name);
-    if (PyObject_GenericSetAttr(self, name, value) < 0) {
-      return -1;
-    } else {
-      // trigger watch event
-      if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, value) < 0) {
-        return -1;
-      }
-    }
-    return 0;
-  } else if (PySchema_IsSchemaType(anno_type)) {
-    // create a new instance of the class and initialize it
-    PyObject *instance = PyObject_CallObject(anno_type, PyTuple_Pack(1, value));
-    if (instance == NULL) {
+    break;
+  case TypeList: {
+    PyObject *anno_element_type = PySchema_GetListItemTypeObj(anno_obj);
+    if (anno_element_type == NULL) {
       return -1;
     }
-    PyObject *old_value = PyObject_GenericGetAttr(self, name);
-    if (PyObject_GenericSetAttr(self, name, instance) < 0) {
+    if (!PySchema_IsValidListInstance(value, anno_element_type)) {
       return -1;
-    } else {
-      // trigger watch event
-      if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, instance) <
-          0) {
+    }
+    break;
+  }
+  case TypeDict: {
+    PyObject *anno_key_type, *anno_value_type;
+    if (PySchema_GetKVTypeObj_FromDictTypeObj(anno_obj, &anno_key_type,
+                                              &anno_value_type) < 0) {
+      return -1;
+    }
+    if (!PySchema_IsValidDictInstance(value, anno_key_type, anno_value_type)) {
+      return -1;
+    }
+    break;
+  }
+  case TypeSchema:
+    if (PySchema_IsValidSchemaTypeObj(anno_obj)) {
+      // create a new instance of the class and initialize it
+      PyObject *instance =
+          PyObject_CallObject(anno_obj, PyTuple_Pack(1, value));
+      if (instance == NULL) {
         return -1;
       }
+      PyObject *old_value = PyObject_GenericGetAttr(self, name);
+      if (PyObject_GenericSetAttr(self, name, instance) < 0) {
+        return -1;
+      } else {
+        // trigger watch event
+        if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, instance) <
+            0) {
+          return -1;
+        }
+      }
+      return 0;
     }
-    return 0;
+    break;
+  default:
+    PyErr_SetString(
+        PyExc_TypeError,
+        sprintf_static("Unsupported type while setting attribute %s",
+                       name_str_c));
+    return -1;
   }
 
-  PyErr_SetString(
-      PyExc_TypeError,
-      sprintf_static("Unsupported type while setting attribute %s of type %s",
-                     name_str_c, ((PyTypeObject *)anno_type)->tp_name));
-  return -1;
+  PyObject *old_value = PyObject_GenericGetAttr(self, name);
+  if (PyObject_GenericSetAttr(self, name, value) < 0) {
+    return -1;
+  } else {
+    // trigger watch event
+    if (PyWatch_OnAttributeUpdate(self, name_str_c, old_value, value) < 0) {
+      return -1;
+    }
+  }
+  return 0;
 }

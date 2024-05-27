@@ -4,7 +4,7 @@
 int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
 
   // get annotations
-  PyObject *annotations = PySchema_GetAnnotations(self);
+  PyObject *annotations = PySchema_GetAnnoListObj(self);
   if (annotations == NULL) {
     return -1;
   }
@@ -30,7 +30,7 @@ int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
     PyObject *key_str = PyObject_Str(key);
 
     // make sure the key is also inside the annotations
-    if (!PySchema_ContainAnnotationKey(self, PyUnicode_AsUTF8(key_str))) {
+    if (!PySchema_ContainAnnoObj_ByCStr(self, PyUnicode_AsUTF8(key_str))) {
       PyErr_SetString(
           PyExc_AttributeError,
           sprintf_static("Attribute \"%s\" not found in annotations",
@@ -38,6 +38,7 @@ int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
       return -1;
     }
 
+    // TODO: better type comparisons
     PyObject *left_type =
         PySchema_GetAnnotationType(self, PyUnicode_AsUTF8(key_str));
     if (left_type == NULL) {
@@ -79,16 +80,17 @@ int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
   // make sure all required attributes are set
   pos = 0;
   while (PyDict_Next(annotations, &pos, &key, &value)) {
-    if (!PySchema_IsAnnotationKeyOptional(self, PyUnicode_AsUTF8(key))) {
+    if (!PySchema_IsOptionalAnno_ByCStr(self, PyUnicode_AsUTF8(key))) {
       // make sure attribute is not none
       PyObject *attr = PyObject_GenericGetAttr(self, key);
       if (attr == NULL) {
         return -1;
       }
       if (attr == Py_None) {
-        PyErr_SetString(PyExc_AttributeError,
-                        sprintf_static("Attribute \"%s\" is required",
-                                       PyUnicode_AsUTF8(key)));
+        PyErr_SetString(
+            PyExc_AttributeError,
+            sprintf_static("Attribute \"%s\" is required during init",
+                           PyUnicode_AsUTF8(key)));
         return -1;
       }
     }

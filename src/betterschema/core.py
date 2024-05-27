@@ -2,7 +2,7 @@
 
 # pylint: disable=E0401, E0611
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from betterschema.baselib import __schemas__, __watches__
 from betterschema.baselib import schema as baseschema
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 optional = Optional
+union = Union
 
 
 def is_schema_instance(schema_instance):
