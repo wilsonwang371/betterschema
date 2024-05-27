@@ -62,7 +62,7 @@ SchemaType PySchema_ToSchemaType_FromTypeObj(PyObject *typeval) {
       return TypeSchema;
     }
     // unsupported type
-    WARN("Unsupported type\n");
+    WARN("Unsupported type name %s\n", PyObject_GetNameStr(typeval));
     return TypeInvalid;
   } else if (strcmp(Py_TYPE(typeval)->tp_name, "types.GenericAlias") == 0) {
     // check for list and dict types
@@ -94,14 +94,14 @@ SchemaType PySchema_ToSchemaType_FromTypeObj(PyObject *typeval) {
       return TypeInvalid;
     }
 
-    // if length is more than 1 and the last element is None, it is optional
-    if (PyTuple_Size(args) > 1) {
-      PyObject *last_element = PyTuple_GetItem(args, PyTuple_Size(args) - 1);
-      if (last_element == NULL) {
-        WARN("Failed to get last element\n");
+    // if one of the elements is None, it is optional
+    for (Py_ssize_t i = 0; i < PyTuple_Size(args); i++) {
+      PyObject *element = PyTuple_GetItem(args, i);
+      if (element == NULL) {
+        WARN("Failed to get element\n");
         return TypeInvalid;
       }
-      if (last_element == (PyObject *)Py_TYPE(Py_None)) {
+      if (element == (PyObject *)Py_TYPE(Py_None)) {
         return TypeOptional;
       }
     }
@@ -290,20 +290,7 @@ int PySchema_IsValidTypeObj(PyObject *typeval) {
     }
     return 0;
   }
-  case TypeOptional: {
-    size_t size = PySchema_GetUnionInnerTypeObjSize(typeval);
-    for (size_t i = 0; i < size - 1; i++) {
-      PyObject *union_type = PySchema_GetUnionInnerTypeObj_ByIdx(typeval, i);
-      if (union_type == NULL) {
-        WARN("Failed to get union inner type by index %ld\n", i);
-        return 0;
-      }
-      if (PySchema_IsValidTypeObj(union_type)) {
-        return 1;
-      }
-    }
-    return 0;
-  }
+  case TypeOptional:
   case TypeUnion: {
     size_t size = PySchema_GetUnionInnerTypeObjSize(typeval);
     for (size_t i = 0; i < size; i++) {
@@ -312,11 +299,12 @@ int PySchema_IsValidTypeObj(PyObject *typeval) {
         WARN("Failed to get union inner type by index %ld\n", i);
         return 0;
       }
-      if (PySchema_IsValidTypeObj(union_type)) {
-        return 1;
+      if (union_type != (PyObject *)Py_TYPE(Py_None) &&
+          !PySchema_IsValidTypeObj(union_type)) {
+        return 0;
       }
     }
-    return 0;
+    return 1;
   }
   default:
     return 0;
