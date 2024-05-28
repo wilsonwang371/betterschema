@@ -2,6 +2,7 @@
 #include "init.h"
 
 #include <Python.h>
+#include <regex.h>
 
 // a dict object that maps class names to another dict which maps attribute name
 // strings to functions
@@ -102,14 +103,6 @@ PyObject *watch(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  // if (PyLong_AsLong(argcount) != PyList_Size(list_of_tuples)) {
-  //   char buf[100];
-  //   snprintf(buf, 100, "Expected a function with %ld arguments but got %ld",
-  //            PyList_Size(list_of_tuples), PyLong_AsLong(argcount));
-  //   PyErr_SetString(PyExc_TypeError, buf);
-  //   return NULL;
-  // }
-
   // go through the list of tuples, make sure
   // the first element of each tuple is a class
   // and the second element is a string
@@ -161,27 +154,47 @@ int PyWatch_OnAttributeUpdate(PyObject *instance, const char *attr,
     return 0;
   }
 
-  PyObject *func_list = PyDict_GetItem(class_dict, PyUnicode_FromString(attr));
-  if (func_list == NULL) {
-    return 0;
-  }
+  // iterate through all keys in class_dict
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  while (PyDict_Next(class_dict, &pos, &key, &value)) {
+    const char *key_str = PyUnicode_AsUTF8(key);
+    if (key_str == NULL) {
+      return -1;
+    }
 
-  // call all the functions in the list
-  for (int i = 0; i < PyList_Size(func_list); i++) {
-    PyObject *func = PyList_GetItem(func_list, i);
-    if (func == NULL) {
+    // use key as regex to match all keys in class_dict
+    regex_t regex;
+    if (regcomp(&regex, key_str, REG_EXTENDED) != 0) {
       return -1;
     }
-    PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr),
-                                  old_value, new_value);
-    if (args == NULL) {
-      return -1;
+
+    if (regexec(&regex, attr, 0, NULL, 0) == 0) {
+      // call watch functions
+      PyObject *func_list = value;
+      if (func_list == NULL) {
+        return -1;
+      }
+
+      // call all the functions in the list
+      for (int i = 0; i < PyList_Size(func_list); i++) {
+        PyObject *func = PyList_GetItem(func_list, i);
+        if (func == NULL) {
+          return -1;
+        }
+        PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr),
+                                      old_value, new_value);
+        if (args == NULL) {
+          return -1;
+        }
+        PyObject *result = PyObject_CallObject(func, args);
+        if (result == NULL) {
+          return -1;
+        }
+
+        Py_DECREF(result);
+      }
     }
-    PyObject *result = PyObject_CallObject(func, args);
-    if (result == NULL) {
-      return -1;
-    }
-    Py_DECREF(result);
   }
 
   return 0;

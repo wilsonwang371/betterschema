@@ -133,6 +133,18 @@ def watch_values(inst, name: str, old, new):
 
 ```
 
+Regular expressions can also be used to match multiple attributes at once.
+
+```python
+
+@core.watch((Foo, "foo[12]"))
+def watch_values(inst, name: str, old, new):
+    print(f"watch_values: {inst}.{name}, {old} -> {new}")
+    if name == "foo1" and new == "hi":
+        raise ValueError("foo1 cannot be 'hi'")
+
+```
+
 ## Contributing
 
 Contributions are welcome! Please submit a pull request or open an issue to discuss your ideas.

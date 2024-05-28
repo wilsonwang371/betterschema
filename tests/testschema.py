@@ -30,7 +30,7 @@ class Foo:
     bar_instance: EmbeddedSchema
 
 
-@core.watch((Foo, "foo1"), (Foo, "foo2"))
+@core.watch((Foo, "foo[12]"))
 def watch_values(inst, name: str, old, new):
     """Watch values"""
     print(f"watch_values: {inst}.{name}, {old} -> {new}")
