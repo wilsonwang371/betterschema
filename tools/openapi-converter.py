@@ -1,5 +1,6 @@
 """Load schemas from external sources."""
 
+import argparse
 import logging
 import os
 import urllib.request
@@ -8,7 +9,6 @@ from pprint import pformat, pprint
 import coloredlogs
 import yaml
 
-
 coloredlogs.install()
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,46 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 K8S_GVK_KEY = "x-kubernetes-group-version-kind"
+
+
+def escape_reserved(name: str) -> str:
+    """Escape reserved keywords."""
+    if name in [
+        "from",
+        "import",
+        "as",
+        "global",
+        "nonlocal",
+        "assert",
+        "async",
+        "await",
+        "break",
+        "class",
+        "continue",
+        "def",
+        "del",
+        "elif",
+        "else",
+        "except",
+        "finally",
+        "for",
+        "if",
+        "lambda",
+        "pass",
+        "raise",
+        "return",
+        "try",
+        "while",
+        "with",
+        "yield",
+    ]:
+        return f"{name}_"
+    return name
+
+
+def pythonize_name(name: str) -> str:
+    """Convert a name to a pythonic name."""
+    return name.replace("-", "_").replace(".", "_")
 
 
 def gvkdict_get_apiversion(gvk: dict) -> str:
@@ -30,38 +70,12 @@ def gvkdict_get_kind(gvk: dict) -> str:
     return gvk["kind"]
 
 
-class SchemaDef:
-    """OpenAPI item class."""
-
-    def __init__(self, name: str, schema: dict) -> None:
-        """OpenAPI item class."""
-        self._name = name
-        self._schema = schema
-
-    def raw_schema(self):
-        """Return the raw schema."""
-        return self._schema
-
-    @property
-    def name(self) -> str:
-        """Return the name."""
-        return self._name
-
-    def imports(self) -> list[str]:
-        """Return the import string."""
-        return []
-
-    def def_string(self) -> str:
-        """Return the definition string."""
-        return ""
-
-
-class K8SSchemaDefProperty:
+class SchemaDefProperty:
     """Kubernetes OpenAPI item property class."""
 
     def __init__(self, name: str, schema: dict, required: bool = False) -> None:
         """Kubernetes OpenAPI item property class."""
-        self._name = name
+        self._name = escape_reserved(name)
         self._schema = schema
         self._required = required
 
@@ -83,6 +97,14 @@ class K8SSchemaDefProperty:
             subtype = self._items.get("$ref", None)
             if subtype is not None and subtype.startswith("#/definitions/"):
                 self._items["$ref"] = subtype[14:]
+
+        self._dependencies = []
+        self._type = self._process_type()
+
+    @property
+    def dependencies(self) -> list[str]:
+        """Return the dependencies."""
+        return self._dependencies
 
     @property
     def required(self) -> bool:
@@ -117,6 +139,10 @@ class K8SSchemaDefProperty:
     @property
     def type(self) -> str:
         """Return the type."""
+        return self._type
+
+    def _process_type(self) -> str:
+        """Return the type."""
         res = ""
         if self.type_str == "integer":
             res = "int"
@@ -124,6 +150,8 @@ class K8SSchemaDefProperty:
             res = "str"
         elif self.type_str == "boolean":
             res = "bool"
+        elif self.type_str == "number":
+            res = "float"
         elif self.type_str == "array":
             assert self._items is not None
             subtype = self._items.get("type", None)
@@ -139,18 +167,99 @@ class K8SSchemaDefProperty:
             else:
                 subtype = self._items.get("$ref", None)
                 assert subtype is not None
-                logger.warning(f"Array subtype {subtype}")
-                res = f"list[{subtype}]".replace(".", "_").replace("-", "_")
+                # logger.warning(f"Array subtype {subtype}")
+                res = pythonize_name(f"list[{subtype}]")
+                if subtype != self.name:
+                    self._dependencies.append(subtype)
         elif self.type_str == "object":
-            res = "dict"
+            res = "dict[str, str]"
         elif self.type_str is None:
             assert self.isref
-            res = self.ref.replace(".", "_").replace("-", "_")
+            res = pythonize_name(self.ref)
+            if self.ref != self.name:
+                self._dependencies.append(self.ref)
         if res == "":
             raise ValueError(f"Invalid type {self._schema}")
         if self.required:
             return res
         return f"core.optional[{res}]"
+
+
+class SchemaDef:
+    """OpenAPI item class."""
+
+    def __init__(self, name: str, schema: dict) -> None:
+        """OpenAPI item class."""
+        self._name = name
+        self._schema = schema
+        self._properties = self._process_properties()
+
+    def _process_properties(self) -> dict[str, SchemaDefProperty]:
+        """Process the properties."""
+        if "properties" not in self._schema:
+            logger.warning(f"Properties not found for {self.name}")
+            return {}
+        p = self._schema["properties"].copy()
+        required_list = []
+        if "required" in self._schema:
+            required_list = self._schema["required"]
+        res = {}
+        for k, v in p.items():
+            res[escape_reserved(k)] = SchemaDefProperty(
+                k, v, required=k in required_list
+            )
+        return res
+
+    @property
+    def description(self) -> str:
+        """Return the description."""
+        return self._schema["description"] if "description" in self._schema else "N/A"
+
+    @property
+    def properties(self) -> dict[str, SchemaDefProperty]:
+        """Return the properties."""
+        return self._properties
+
+    @property
+    def raw_schema(self):
+        """Return the raw schema."""
+        return self._schema
+
+    @property
+    def dependencies(self) -> list[str]:
+        """Return the dependencies."""
+        res = []
+        for v in self.properties.values():
+            res.extend(v.dependencies)
+        return res
+
+    @property
+    def name(self) -> str:
+        """Return the name."""
+        return self._name
+
+    def imports(self) -> list[str]:
+        """Return the import string."""
+        return ["from betterschema import core, render"]
+
+    def def_string(self) -> str:
+        """Return the definition string."""
+        tmpname = pythonize_name(self.name)
+        deps = self.dependencies
+        msg = f"""
+@core.schema
+class {tmpname}:
+    \"\"\"{self.description}\"\"\"
+
+    \"\"\"Dependencies: {deps}\"\"\"
+"""
+        count = 0
+        for k, v in self.properties.items():
+            msg += f"    {k}: {v.type}\n"
+            count += 1
+        if count == 0:
+            msg += "    pass\n"
+        return msg
 
 
 class K8SSchemaDef(SchemaDef):
@@ -159,22 +268,8 @@ class K8SSchemaDef(SchemaDef):
     def __init__(self, name: str, schema: dict) -> None:
         """Kubernetes OpenAPI item class."""
         super().__init__(name, schema)
-        self._properties = self._process_properties()
         if "additionalProperties" in self._schema:
             self._additional_properties = self._schema["additionalProperties"]
-
-    def _process_properties(self) -> dict[str, K8SSchemaDefProperty]:
-        """Process the properties."""
-        if "properties" not in self._schema:
-            return {}
-        p = self._schema["properties"].copy()
-        required_list = []
-        if "required" in self._schema:
-            required_list = self._schema["required"]
-        res = {}
-        for k, v in p.items():
-            res[k] = K8SSchemaDefProperty(k, v, required=k in required_list)
-        return res
 
     @property
     def gvks(self) -> list:
@@ -183,34 +278,11 @@ class K8SSchemaDef(SchemaDef):
         return self._schema[K8S_GVK_KEY]
 
     @property
-    def properties(self) -> dict[str, K8SSchemaDefProperty]:
-        """Return the properties."""
-        return self._properties
-
-    @property
     def additional_properties(self) -> dict:
         """Return the additional properties."""
         if not hasattr(self, "_additional_properties"):
             return {}
         return self._additional_properties
-
-    def imports(self) -> list[str]:
-        """Return the import string."""
-        return [
-            "from betterschema import core, render"
-        ]
-
-    def def_string(self) -> str:
-        """Return the definition string."""
-        tmpname = self.name.replace(".", "_").replace("-", "_")
-        msg = f"""
-@core.schema
-class {tmpname}:
-    \"\"\"{self.raw_schema()["description"]}\"\"\"
-"""
-        for k, v in self.properties.items():
-            msg += f"    {k}: {v.type}\n"
-        return msg
 
 
 class SchemaDefFactory:
@@ -219,6 +291,7 @@ class SchemaDefFactory:
     @staticmethod
     def create(name: str, schema: dict) -> SchemaDef:
         """Create an OpenAPI item."""
+        logger.debug(f"Creating schema {name}")
         if K8S_GVK_KEY in schema:
             return K8SSchemaDef(name, schema)
         return SchemaDef(name, schema)
@@ -234,8 +307,12 @@ class OpenAPISpecLoader:
         else:
             specfile = spec_path
         req = urllib.request.Request(specfile)
-        with urllib.request.urlopen(req) as response:
-            spec = yaml.safe_load(response)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as response:
+                spec = yaml.safe_load(response)
+        except urllib.error.HTTPError as e:
+            logger.error(f"Error loading {specfile}: {e}")
+            raise
         self.data = spec
 
     @property
@@ -259,33 +336,32 @@ class OpenAPISpecLoader:
         """Return the definitions as a dict."""
         res = {}
         for k, v in self.definitions.items():
-            if "type" not in v:
-                logger.warning(f"Type not found for {k} \n{pformat(v)}")
-                continue
             res[k] = SchemaDefFactory.create(k, v)
         return res
 
 
+def parse_args():
+    """Parse the arguments."""
+    parser = argparse.ArgumentParser(description="OpenAPI Schema Converter")
+    parser.add_argument(
+        "-u",
+        "--url",
+        help="URL to the OpenAPI spec file",
+        default="https://raw.githubusercontent.com/kubernetes/kubernetes/master/api/openapi-spec/swagger.json",
+    )
+    # output file
+    parser.add_argument(
+        "-o",
+        "--output",
+        help="Output file",
+        default="output.py",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    url = "https://raw.githubusercontent.com/kubernetes/kubernetes/master/api/openapi-spec/swagger.json"
-    data = OpenAPISpecLoader(url)
-    # print(data.version)
-    # count = 0
-    # available_keys = {}
-    # for k,v in data.definitions.items():
-    #     print("\n")
-    #     print(k)
-    #     if "properties" in v and "apiVersion" in v["properties"]:
-    #         pprint(v["properties"])
-    #     for key in v.keys():
-    #         if key not in available_keys:
-    #             available_keys[key] = 1
-    #         else:
-    #             available_keys[key] += 1
-    #     count += 1
-    #     # if count > 30:
-    #     #     break
-    # pprint([k for k,v in available_keys.items() if v > 1])
+    args = parse_args()
+    data = OpenAPISpecLoader(args.url)
 
     existing_types = {}
     res = data.schema_defs()
@@ -293,15 +369,54 @@ if __name__ == "__main__":
     imports = []
     lines = []
     output = ""
+
+    # sort res based on its dependencies
+    max_iter = 100000
+    tmp = {}
+    # hack begin
+    tmp["io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps"] = (
+        res["io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps"]
+    )
+    del res["io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps"]
+    # hack end
+    while len(res) > 0:
+        keys_to_remove = []
+        # for each item in res, check if all its dependencies are in tmp items
+        for k, v in res.items():
+            deps = v.dependencies
+            if all([dep in tmp for dep in deps]) or len(deps) == 0:
+                tmp[k] = v
+                keys_to_remove.append(k)
+        for k in keys_to_remove:
+            del res[k]
+        max_iter -= 1
+        if max_iter == 0:
+            logger.error(
+                "Max iteration reached, remaining items: {}".format(
+                    [v.dependencies for k, v in res.items()]
+                )
+            )
+            raise ValueError("Max iteration reached")
+    res = tmp
+
     for i in res.values():
         if isinstance(i, K8SSchemaDef):
-            print(i.name)
+            logger.info(f"Processing K8s Schema: {i.name}")
             # pprint(i.gvks)
             # for j in i.gvks:
             #     print(gvkdict_get_apiversion(j))
             #     print(gvkdict_get_kind(j))
-            if len(i.gvks) > 1:
-                logger.warning(f"Multiple GVKs found for {i.name}, {i.gvks}")
+
+            # if len(i.gvks) > 1:
+            #     logger.warning(f"Multiple GVKs found for {i.name}, {i.gvks}")
+            for k, v in i.properties.items():
+                try:
+                    # logger.warning(f"{k}, {v.type}, {v.ref}, {v.raw_property}")
+                    existing_types[v.type] = 1
+                except Exception as e:
+                    logger.error(f"{i.name} {str(e)}")
+        else:
+            logger.info(f"Processing Schema: {i.name}")
             for k, v in i.properties.items():
                 try:
                     # logger.warning(f"{k}, {v.type}, {v.ref}, {v.raw_property}")
@@ -315,6 +430,7 @@ if __name__ == "__main__":
         if i.def_string():
             lines.append(i.def_string())
     output = "\n".join(imports) + "\n\n" + "\n".join(lines)
-    print(output)
 
-    # pprint([k for k, v in existing_types.items()])
+    # output to file
+    with open(args.output, "w") as f:
+        f.write(output)

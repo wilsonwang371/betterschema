@@ -29,7 +29,7 @@ const char *PyObject_GetNameStr(PyObject *obj) {
   return PyUnicode_AsUTF8(name);
 }
 
-PyObject *PySchema_SetAnnoListObj(PyObject *obj, PyObject *annotations) {
+PyObject *PySchema_SetAnnoDictObj(PyObject *obj, PyObject *annotations) {
   PyTypeObject *type;
   if (PyType_Check(obj) == 0) {
     type = Py_TYPE(obj);
@@ -51,7 +51,7 @@ PyObject *PySchema_SetAnnoListObj(PyObject *obj, PyObject *annotations) {
   return annotations;
 }
 
-PyObject *PySchema_GetAnnoListObj(PyObject *obj) {
+PyObject *PySchema_GetAnnoDictObj(PyObject *obj) {
   PyTypeObject *type;
   if (PyType_Check(obj) == 0) {
     type = Py_TYPE(obj);
@@ -70,6 +70,11 @@ PyObject *PySchema_GetAnnoListObj(PyObject *obj) {
     PyErr_SetString(PyExc_AttributeError, "__annotations__ not found");
     return NULL;
   } else {
+    // make sure annotations is a dict
+    if (PyDict_Check(annotations) == 0) {
+      PyErr_SetString(PyExc_TypeError, "__annotations__ is not a dict");
+      return NULL;
+    }
     if (!PySchema_IsValidAnnotations(annotations)) {
       WARN("Invalid annotations\n");
       return NULL;
@@ -93,7 +98,7 @@ int PySchema_IsOptionalAnno_ByCStr(PyObject *obj, const char *attr) {
 }
 
 PyObject *PySchema_GetAnnoObj_ByCStr(PyObject *obj, const char *attr) {
-  PyObject *annotations = PySchema_GetAnnoListObj(obj);
+  PyObject *annotations = PySchema_GetAnnoDictObj(obj);
   if (annotations == NULL) {
     WARN("Failed to get annotations while getting annotation obj\n");
     return NULL;
@@ -162,20 +167,20 @@ PyObject *PySchema_GetAnnotationType(PyObject *obj, const char *attr) {
 
 int PySchema_IsValidAnnotations(PyObject *annotations) {
   PyObject *key, *value;
-  PyObject *schema = PySchema_GetRegisteredSchemaDictObj();
+  // PyObject *schema = PySchema_GetRegisteredSchemaDictObj();
   Py_ssize_t pos = 0;
 
-  if (schema == NULL) {
-    return 0;
-  }
+  // if (schema == NULL) {
+  //   return 0;
+  // }
 
   while (PyDict_Next(annotations, &pos, &key, &value)) {
     // print key and value
     int res = PySchema_IsValidTypeObj(value);
     if (res == 0) {
-      PyErr_SetString(
-          PyExc_TypeError,
-          sprintf_static("Invalid type %s", PyObject_GetNameStr(value)));
+      PyErr_SetString(PyExc_TypeError,
+                      sprintf_static("Invalid type key: %s value: %s",
+                                     PyObject_Str(key), PyObject_Str(value)));
       return 0;
     }
   }
@@ -184,7 +189,7 @@ int PySchema_IsValidAnnotations(PyObject *annotations) {
 }
 
 void PySchema_PrintAnnotations(PyObject *obj) {
-  PyObject *annotations = PySchema_GetAnnoListObj(obj);
+  PyObject *annotations = PySchema_GetAnnoDictObj(obj);
   if (annotations == NULL) {
     return;
   }

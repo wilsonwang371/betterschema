@@ -6,8 +6,8 @@
 #include "utils.h"
 #include <Python.h>
 
-#define CLASS_NAME_MAX_LEN 64
-#define CLASS_DEF_BUF_SIZE 1024
+#define CLASS_NAME_MAX_LEN 512
+#define CLASS_DEF_BUF_SIZE 2048
 
 static PyObject *PySchema_lshift(PyObject *, PyObject *);
 
@@ -33,7 +33,7 @@ PyObject *schema(PyObject *self, PyObject *args) {
   }
 
   // find all __annotations__
-  PyObject *annotations = PySchema_GetAnnoListObj(obj);
+  PyObject *annotations = PySchema_GetAnnoDictObj(obj);
   if (annotations == NULL) {
     return NULL;
   }
@@ -86,7 +86,7 @@ PyObject *schema(PyObject *self, PyObject *args) {
   class_type->tp_init = PySchema_ClassInit;
   class_type->tp_as_number = &PySchema_NumberMethods;
 
-  if (PySchema_SetAnnoListObj(class, annotations) == NULL) {
+  if (PySchema_SetAnnoDictObj(class, annotations) == NULL) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to set annotations");
     err = 1;
     goto out;
