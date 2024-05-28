@@ -8,7 +8,6 @@ from pprint import pformat, pprint
 import coloredlogs
 import yaml
 
-from betterschema import dirtydict
 
 coloredlogs.install()
 logger = logging.getLogger(__name__)
@@ -48,7 +47,11 @@ class SchemaDef:
         """Return the name."""
         return self._name
 
-    def defstring(self) -> str:
+    def imports(self) -> list[str]:
+        """Return the import string."""
+        return []
+
+    def def_string(self) -> str:
         """Return the definition string."""
         return ""
 
@@ -56,10 +59,11 @@ class SchemaDef:
 class K8SSchemaDefProperty:
     """Kubernetes OpenAPI item property class."""
 
-    def __init__(self, name: str, schema: dict) -> None:
+    def __init__(self, name: str, schema: dict, required: bool = False) -> None:
         """Kubernetes OpenAPI item property class."""
         self._name = name
         self._schema = schema
+        self._required = required
 
         self._ref = self._schema.get("$ref", None)
         # remove ref #/definitions/
@@ -67,13 +71,23 @@ class K8SSchemaDefProperty:
             if not self._ref.startswith("#/definitions/"):
                 logger.warning(f"Invalid ref {self._ref}")
             else:
-                self._ref = self._ref.replace("#/definitions/", "")
+                # remove #/definitions/
+                self._ref = self._ref[14:]
 
         self._type = self._schema.get("type", None)
 
         self._isref = "$ref" in self._schema
 
         self._items = self._schema.get("items", None)
+        if self._items is not None:
+            subtype = self._items.get("$ref", None)
+            if subtype is not None and subtype.startswith("#/definitions/"):
+                self._items["$ref"] = subtype[14:]
+
+    @property
+    def required(self) -> bool:
+        """Return the required."""
+        return self._required
 
     @property
     def raw_property(self):
@@ -101,36 +115,42 @@ class K8SSchemaDefProperty:
         return self._ref
 
     @property
-    def type(self) -> type:
+    def type(self) -> str:
         """Return the type."""
+        res = ""
         if self.type_str == "integer":
-            return int
-        if self.type_str == "string":
-            return str
-        if self.type_str == "boolean":
-            return bool
-        if self.type_str == "array":
+            res = "int"
+        elif self.type_str == "string":
+            res = "str"
+        elif self.type_str == "boolean":
+            res = "bool"
+        elif self.type_str == "array":
             assert self._items is not None
             subtype = self._items.get("type", None)
             if subtype is not None:
                 if subtype == "integer":
-                    return list[int]
-                if subtype == "string":
-                    return list[str]
-                if subtype == "boolean":
-                    return list[bool]
-                raise ValueError(f"Invalid subtype {self._schema}")
+                    res = "list[int]"
+                elif subtype == "string":
+                    res = "list[str]"
+                elif subtype == "boolean":
+                    res = "list[bool]"
+                else:
+                    raise ValueError(f"Invalid subtype {self._schema}")
             else:
                 subtype = self._items.get("$ref", None)
                 assert subtype is not None
-                tmptype = type(subtype, (object,), {})
-                return list[tmptype]
-        if self.type_str == "object":
-            return dict
-        if self.type_str is None:
+                logger.warning(f"Array subtype {subtype}")
+                res = f"list[{subtype}]".replace(".", "_").replace("-", "_")
+        elif self.type_str == "object":
+            res = "dict"
+        elif self.type_str is None:
             assert self.isref
-            return type(self.ref, (object,), {})
-        raise ValueError(f"Invalid type {self._schema}")
+            res = self.ref.replace(".", "_").replace("-", "_")
+        if res == "":
+            raise ValueError(f"Invalid type {self._schema}")
+        if self.required:
+            return res
+        return f"core.optional[{res}]"
 
 
 class K8SSchemaDef(SchemaDef):
@@ -148,7 +168,13 @@ class K8SSchemaDef(SchemaDef):
         if "properties" not in self._schema:
             return {}
         p = self._schema["properties"].copy()
-        return {k: K8SSchemaDefProperty(k, v) for k, v in p.items()}
+        required_list = []
+        if "required" in self._schema:
+            required_list = self._schema["required"]
+        res = {}
+        for k, v in p.items():
+            res[k] = K8SSchemaDefProperty(k, v, required=k in required_list)
+        return res
 
     @property
     def gvks(self) -> list:
@@ -168,15 +194,22 @@ class K8SSchemaDef(SchemaDef):
             return {}
         return self._additional_properties
 
-    def defstring(self) -> str:
+    def imports(self) -> list[str]:
+        """Return the import string."""
+        return [
+            "from betterschema import core, render"
+        ]
+
+    def def_string(self) -> str:
         """Return the definition string."""
-        tmpname = self.name.replace(".", "_")
+        tmpname = self.name.replace(".", "_").replace("-", "_")
         msg = f"""
+@core.schema
 class {tmpname}:
     \"\"\"{self.raw_schema()["description"]}\"\"\"
-    pass
-
 """
+        for k, v in self.properties.items():
+            msg += f"    {k}: {v.type}\n"
         return msg
 
 
@@ -236,8 +269,8 @@ class OpenAPISpecLoader:
 if __name__ == "__main__":
     url = "https://raw.githubusercontent.com/kubernetes/kubernetes/master/api/openapi-spec/swagger.json"
     data = OpenAPISpecLoader(url)
-    print(data.version)
-    count = 0
+    # print(data.version)
+    # count = 0
     # available_keys = {}
     # for k,v in data.definitions.items():
     #     print("\n")
@@ -256,6 +289,10 @@ if __name__ == "__main__":
 
     existing_types = {}
     res = data.schema_defs()
+
+    imports = []
+    lines = []
+    output = ""
     for i in res.values():
         if isinstance(i, K8SSchemaDef):
             print(i.name)
@@ -271,9 +308,13 @@ if __name__ == "__main__":
                     existing_types[v.type] = 1
                 except Exception as e:
                     logger.error(f"{i.name} {str(e)}")
+        tmp = i.imports()
+        for j in tmp:
+            if j not in imports:
+                imports.append(j)
+        if i.def_string():
+            lines.append(i.def_string())
+    output = "\n".join(imports) + "\n\n" + "\n".join(lines)
+    print(output)
 
-        count += 1
-        if count > 1000:
-            break
-        print(i.defstring())
-    pprint([k for k, v in existing_types.items()])
+    # pprint([k for k, v in existing_types.items()])

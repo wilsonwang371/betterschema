@@ -37,6 +37,7 @@ class Foo:
     foo4: list[str] # List of strings
     foo5: core.optional[int] # Optional field
     foo6: dict[str, int] # Dictionary field
+    foo7: core.optional[core.union[int, str]] # Optional field with multiple types
 
     @core.schema
     class EmbeddedSchema:
