@@ -1,6 +1,7 @@
 """ Test for betterschema.core """
 
 # pylint: disable=E1101, W0104, E1136, R0903, R0912, R0915
+import os
 import unittest
 from pprint import pprint
 
@@ -30,12 +31,23 @@ class Foo:
     bar_instance: EmbeddedSchema
 
 
-@core.watch((Foo, "foo[12]"))
-def watch_values(inst, name: str, old, new):
-    """Watch values"""
-    print(f"watch_values: {inst}.{name}, {old} -> {new}")
-    if name == "foo1" and new == "hi":
-        raise ValueError("foo1 cannot be 'hi'")
+if os.name != "nt":
+
+    @core.watch((Foo, "foo1"), (Foo, "foo2"))
+    def watch_values(inst, name: str, old, new):
+        """Watch values"""
+        print(f"watch_values: {inst}.{name}, {old} -> {new}")
+        if name == "foo1" and new == "hi":
+            raise ValueError("foo1 cannot be 'hi'")
+
+else:
+
+    @core.watch((Foo, "foo[12]"))
+    def watch_values(inst, name: str, old, new):
+        """Watch values"""
+        print(f"watch_values: {inst}.{name}, {old} -> {new}")
+        if name == "foo1" and new == "hi":
+            raise ValueError("foo1 cannot be 'hi'")
 
 
 class TestSchema(unittest.TestCase):

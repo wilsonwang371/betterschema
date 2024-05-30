@@ -2,7 +2,16 @@
 #include "init.h"
 
 #include <Python.h>
+
+#ifdef LIBC_REGEX
+#undef LIBC_REGEX
+#endif
+
+// only on non windows platforms
+#ifndef _WIN32
 #include <regex.h>
+#define LIBC_REGEX
+#endif
 
 // a dict object that maps class names to another dict which maps attribute name
 // strings to functions
@@ -154,6 +163,7 @@ int PyWatch_OnAttributeUpdate(PyObject *instance, const char *attr,
     return 0;
   }
 
+#ifdef LIBC_REGEX
   // iterate through all keys in class_dict
   PyObject *key, *value;
   Py_ssize_t pos = 0;
@@ -196,6 +206,32 @@ int PyWatch_OnAttributeUpdate(PyObject *instance, const char *attr,
       }
     }
   }
+#else  // LIBC_REGEX
+  // check if attr is in class_dict
+  PyObject *func_list = PyDict_GetItem(class_dict, PyUnicode_FromString(attr));
+  if (func_list == NULL) {
+    return 0;
+  }
+
+  // call all the functions in the list
+  for (int i = 0; i < PyList_Size(func_list); i++) {
+    PyObject *func = PyList_GetItem(func_list, i);
+    if (func == NULL) {
+      return -1;
+    }
+    PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr),
+                                  old_value, new_value);
+    if (args == NULL) {
+      return -1;
+    }
+    PyObject *result = PyObject_CallObject(func, args);
+    if (result == NULL) {
+      return -1;
+    }
+
+    Py_DECREF(result);
+  }
+#endif // LIBC_REGEX
 
   return 0;
 }
