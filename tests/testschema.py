@@ -1,7 +1,6 @@
 """ Test for betterschema.core """
 
 # pylint: disable=E1101, W0104, E1136, R0903, R0912, R0915
-import os
 import unittest
 from pprint import pprint
 
