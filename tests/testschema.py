@@ -31,23 +31,12 @@ class Foo:
     bar_instance: EmbeddedSchema
 
 
-if os.name != "nt":
-
-    @core.watch((Foo, "foo1"), (Foo, "foo2"))
-    def watch_values(inst, name: str, old, new):
-        """Watch values"""
-        print(f"watch_values: {inst}.{name}, {old} -> {new}")
-        if name == "foo1" and new == "hi":
-            raise ValueError("foo1 cannot be 'hi'")
-
-else:
-
-    @core.watch((Foo, "foo[12]"))
-    def watch_values(inst, name: str, old, new):
-        """Watch values"""
-        print(f"watch_values: {inst}.{name}, {old} -> {new}")
-        if name == "foo1" and new == "hi":
-            raise ValueError("foo1 cannot be 'hi'")
+@core.watch((Foo, "foo[12]"))
+def watch_values(inst, name: str, old, new):
+    """Watch values"""
+    print(f"watch_values: {inst}.{name}, {old} -> {new}")
+    if name == "foo1" and new == "hi":
+        raise ValueError("foo1 cannot be 'hi'")
 
 
 class TestSchema(unittest.TestCase):

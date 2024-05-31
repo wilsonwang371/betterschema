@@ -207,29 +207,68 @@ int PyWatch_OnAttributeUpdate(PyObject *instance, const char *attr,
     }
   }
 #else  // LIBC_REGEX
-  // check if attr is in class_dict
-  PyObject *func_list = PyDict_GetItem(class_dict, PyUnicode_FromString(attr));
-  if (func_list == NULL) {
-    return 0;
+  // use python regex to match keys
+  PyObject *re = PyImport_ImportModule("re");
+  if (re == NULL) {
+    return -1;
+  }
+  PyObject *re_compile = PyObject_GetAttrString(re, "compile");
+  if (re_compile == NULL) {
+    return -1;
+  }
+  PyObject *re_match = PyObject_GetAttrString(re, "match");
+  if (re_match == NULL) {
+    return -1;
   }
 
-  // call all the functions in the list
-  for (int i = 0; i < PyList_Size(func_list); i++) {
-    PyObject *func = PyList_GetItem(func_list, i);
-    if (func == NULL) {
+  PyObject *key, *value;
+  Py_ssize_t pos = 0;
+  while (PyDict_Next(class_dict, &pos, &key, &value)) {
+    PyObject *key_str = PyObject_Str(key);
+    if (key_str == NULL) {
       return -1;
     }
-    PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr),
-                                  old_value, new_value);
-    if (args == NULL) {
+    PyObject *pattern = PyObject_Str(key_str);
+    if (pattern == NULL) {
       return -1;
     }
-    PyObject *result = PyObject_CallObject(func, args);
-    if (result == NULL) {
+    PyObject *regex = PyObject_CallObject(re_compile, pattern);
+    if (regex == NULL) {
+      return -1;
+    }
+    PyObject *match = PyObject_CallObject(
+        re_match, PyTuple_Pack(2, regex, PyUnicode_FromString(attr)));
+    if (match == NULL) {
+      return -1;
+    }
+    if (PyObject_IsTrue(match) == 0) {
+      continue;
+    }
+
+    // call watch functions
+    PyObject *func_list = value;
+    if (func_list == NULL) {
       return -1;
     }
 
-    Py_DECREF(result);
+    // call all the functions in the list
+    for (int i = 0; i < PyList_Size(func_list); i++) {
+      PyObject *func = PyList_GetItem(func_list, i);
+      if (func == NULL) {
+        return -1;
+      }
+      PyObject *args = PyTuple_Pack(4, instance, PyUnicode_FromString(attr),
+                                    old_value, new_value);
+      if (args == NULL) {
+        return -1;
+      }
+      PyObject *result = PyObject_CallObject(func, args);
+      if (result == NULL) {
+        return -1;
+      }
+
+      Py_DECREF(result);
+    }
   }
 #endif // LIBC_REGEX
 

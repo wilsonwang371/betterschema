@@ -133,7 +133,7 @@ def watch_values(inst, name: str, old, new):
 
 ```
 
-Regular expressions can also be used to match multiple attributes at once. Note: regular expressions are not supported on Windows.
+Regular expressions can also be used to match multiple attributes at once.
 
 ```python
 
