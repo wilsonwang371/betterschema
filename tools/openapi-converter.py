@@ -196,19 +196,26 @@ class SchemaDef:
 
     def _process_properties(self) -> dict[str, SchemaDefProperty]:
         """Process the properties."""
-        if "properties" not in self._schema:
-            logger.warning(f"Properties not found for {self.name}")
-            return {}
-        p = self._schema["properties"].copy()
-        required_list = []
-        if "required" in self._schema:
-            required_list = self._schema["required"]
-        res = {}
-        for k, v in p.items():
-            res[escape_reserved(k)] = SchemaDefProperty(
-                k, v, required=k in required_list
+        expected_keys = ["type", "properties"]
+        no_match = [k for k in expected_keys if k not in self._schema]
+        if len(no_match) == len(expected_keys):
+            logger.warning(
+                f"No type nor properties found in {self._name}, exisiting keys: {self._schema.keys()}"
             )
-        return res
+            return {}
+
+        if "properties" in self._schema:
+            p = self._schema["properties"].copy()
+            required_list = []
+            if "required" in self._schema:
+                required_list = self._schema["required"]
+            res = {}
+            for k, v in p.items():
+                res[escape_reserved(k)] = SchemaDefProperty(
+                    k, v, required=k in required_list
+                )
+            return res
+        return {}
 
     @property
     def description(self) -> str:
@@ -371,7 +378,7 @@ if __name__ == "__main__":
     output = ""
 
     # sort res based on its dependencies
-    max_iter = 100000
+    # max_iter = 100000
     tmp = {}
     # hack begin
     tmp["io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps"] = (
@@ -387,16 +394,23 @@ if __name__ == "__main__":
             if all([dep in tmp for dep in deps]) or len(deps) == 0:
                 tmp[k] = v
                 keys_to_remove.append(k)
-        for k in keys_to_remove:
-            del res[k]
-        max_iter -= 1
-        if max_iter == 0:
+        if len(keys_to_remove) == 0:
             logger.error(
-                "Max iteration reached, remaining items: {}".format(
+                "No items can be moved to tmp, remaining items: {}".format(
                     [v.dependencies for k, v in res.items()]
                 )
             )
-            raise ValueError("Max iteration reached")
+            raise ValueError("No items can be moved to tmp")
+        for k in keys_to_remove:
+            del res[k]
+        # max_iter -= 1
+        # if max_iter == 0:
+        #     logger.error(
+        #         "Max iteration reached, remaining items: {}".format(
+        #             [v.dependencies for k, v in res.items()]
+        #         )
+        #     )
+        #     raise ValueError("Max iteration reached")
     res = tmp
 
     for i in res.values():

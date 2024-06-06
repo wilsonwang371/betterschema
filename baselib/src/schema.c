@@ -5,11 +5,15 @@
 #include "string.h"
 #include "utils.h"
 #include <Python.h>
+#include <assert.h>
 
 #define CLASS_NAME_MAX_LEN 512
 #define CLASS_DEF_BUF_SIZE 2048
 
 static PyObject *PySchema_lshift(PyObject *, PyObject *);
+static PyObject *schema_with_options(PyObject *self, PyObject *obj,
+                                     PyObject *options);
+static void process_options(PyObject *new_cls, PyObject *options);
 
 static PyNumberMethods PySchema_NumberMethods = {
     .nb_lshift = (binaryfunc)PySchema_lshift,
@@ -24,13 +28,92 @@ void PySchema_Init(PyObject *module) {
 }
 
 PyObject *schema(PyObject *self, PyObject *args) {
+  // check the number of arguments
+  int args_len = PyTuple_Size(args);
+  PyObject *cls_obj = NULL;
+  PyObject *options_dict = NULL;
+
+  if (args_len == 1) {
+    if (!PyArg_ParseTuple(args, "O", &cls_obj)) {
+      return NULL; // Failed to parse a Python object argument
+    }
+    options_dict = PyDict_New();
+    if (options_dict == NULL) {
+      return NULL;
+    }
+  } else if (args_len == 2) {
+    if (!PyArg_ParseTuple(args, "OO", &cls_obj, &options_dict)) {
+      return NULL; // Failed to parse a Python object argument
+    }
+  } else {
+    PyErr_SetString(PyExc_TypeError, "Expected 1 or 2 arguments");
+    return NULL;
+  }
+
+  // make sure cls_obj is a class
+  if (!PyType_Check(cls_obj)) {
+    PyErr_SetString(PyExc_TypeError, "Expected class");
+    return NULL;
+  }
+  // make sure options_dict is a dict
+  if (!PyDict_Check(options_dict)) {
+    PyErr_SetString(PyExc_TypeError, "Expected dict");
+    return NULL;
+  }
+  return schema_with_options(self, cls_obj, options_dict);
+}
+
+static void process_options(PyObject *new_cls, PyObject *options) {
+  UNUSED(new_cls);
+  // make sure teh options is a dictionary
+  if (!PyDict_Check(options)) {
+    PyErr_SetString(PyExc_TypeError, "Expected dict");
+    return;
+  }
+  // get the 'mapping' key from the options
+  // the value containes a dict of key value pairs
+  PyObject *mapping = PyDict_GetItemString(options, "mapping");
+  if (mapping != NULL) {
+    INFO("Processing mapping\n");
+    // make sure mapping is a dict
+    if (!PyDict_Check(mapping)) {
+      PyErr_SetString(PyExc_TypeError, "Expected dict");
+      return;
+    }
+    // iterate all items in the mapping dict
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(mapping, &pos, &key, &value)) {
+      // make sure key and value are strings
+      if (!PyUnicode_Check(key) || !PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Expected str");
+        return;
+      }
+
+      // make sure the keys are in the annotations
+      PyObject *annotations = PySchema_GetAnnoDictObj(new_cls);
+      if (annotations == NULL) {
+        return;
+      }
+      if (PyDict_GetItem(annotations, key) == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "Attribute not found");
+        return;
+      }
+    }
+
+    // add the mapping dict to the new class
+    if (PyObject_GenericSetAttr(
+            new_cls, PyUnicode_FromString("__anno_mapping__"), mapping) < 0) {
+      PyErr_SetString(PyExc_RuntimeError, "Failed to set attribute");
+      return;
+    }
+  }
+}
+
+static PyObject *schema_with_options(PyObject *self, PyObject *obj,
+                                     PyObject *options) {
   UNUSED(self);
   int err = 0;
-
-  PyObject *obj;
-  if (!PyArg_ParseTuple(args, "O", &obj)) {
-    return NULL; // Failed to parse a Python object argument
-  }
 
   // find all __annotations__
   PyObject *annotations = PySchema_GetAnnoDictObj(obj);
@@ -127,6 +210,9 @@ PyObject *schema(PyObject *self, PyObject *args) {
       }
     }
   }
+
+  // process options
+  process_options(class, options);
 
   if (!PyCallable_Check(class)) {
     PyErr_SetString(PyExc_RuntimeError, "Failed to create a callable class");

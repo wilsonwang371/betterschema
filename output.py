@@ -975,6 +975,16 @@ class io_k8s_api_core_v1_LimitRangeSpec:
 
 
 @core.schema
+class io_k8s_api_core_v1_LinuxContainerUser:
+    """LinuxContainerUser represents user identity information in Linux containers"""
+
+    """Dependencies: []"""
+    gid: int
+    supplementalGroups: core.optional[list[int]]
+    uid: int
+
+
+@core.schema
 class io_k8s_api_core_v1_LocalObjectReference:
     """LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace."""
 
@@ -2971,6 +2981,14 @@ class io_k8s_api_core_v1_ContainerStateTerminated:
 
 
 @core.schema
+class io_k8s_api_core_v1_ContainerUser:
+    """ContainerUser represents user identity information"""
+
+    """Dependencies: ['io.k8s.api.core.v1.LinuxContainerUser']"""
+    linux: core.optional[io_k8s_api_core_v1_LinuxContainerUser]
+
+
+@core.schema
 class io_k8s_api_core_v1_EmptyDirVolumeSource:
     """Represents an empty directory for a pod. Empty directory volumes support ownership management and SELinux relabeling."""
 
@@ -3266,6 +3284,7 @@ class io_k8s_api_core_v1_PodSecurityContext:
     seLinuxOptions: core.optional[io_k8s_api_core_v1_SELinuxOptions]
     seccompProfile: core.optional[io_k8s_api_core_v1_SeccompProfile]
     supplementalGroups: core.optional[list[int]]
+    supplementalGroupsPolicy: core.optional[str]
     sysctls: core.optional[list[io_k8s_api_core_v1_Sysctl]]
     windowsOptions: core.optional[io_k8s_api_core_v1_WindowsSecurityContextOptions]
 
@@ -4779,7 +4798,7 @@ class io_k8s_api_core_v1_ContainerState:
 class io_k8s_api_core_v1_ContainerStatus:
     """ContainerStatus contains details for the current status of this container."""
 
-    """Dependencies: ['io.k8s.api.core.v1.ContainerState', 'io.k8s.api.core.v1.ResourceRequirements', 'io.k8s.api.core.v1.ContainerState', 'io.k8s.api.core.v1.VolumeMountStatus']"""
+    """Dependencies: ['io.k8s.api.core.v1.ContainerState', 'io.k8s.api.core.v1.ResourceRequirements', 'io.k8s.api.core.v1.ContainerState', 'io.k8s.api.core.v1.ContainerUser', 'io.k8s.api.core.v1.VolumeMountStatus']"""
     allocatedResources: core.optional[dict[str, str]]
     containerID: core.optional[str]
     image: str
@@ -4791,6 +4810,7 @@ class io_k8s_api_core_v1_ContainerStatus:
     restartCount: int
     started: core.optional[bool]
     state: core.optional[io_k8s_api_core_v1_ContainerState]
+    user: core.optional[io_k8s_api_core_v1_ContainerUser]
     volumeMounts: core.optional[list[io_k8s_api_core_v1_VolumeMountStatus]]
 
 
