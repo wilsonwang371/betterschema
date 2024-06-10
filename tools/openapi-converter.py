@@ -48,9 +48,46 @@ def escape_reserved(name: str) -> str:
         "while",
         "with",
         "yield",
+        "not",
     ]:
         return f"{name}_"
     return name
+
+
+def has_special_chars(name: str) -> bool:
+    """Check if a name has special characters.
+    Special characters are: -, ., /, \, [, ], {, }, (, ), <, >, =, +, *, &, %, $, #, @, !
+    """
+    return any(c in name for c in "-./\[\]{}()<>+=*&%$#@!")
+
+
+def escape_special_chars(name: str) -> str:
+    """Escape special characters in a name.
+    Special characters are: -, ., /, \, [, ], {, }, (, ), <, >, =, +, *, &, %, $, #, @, !
+    """
+    return (
+        name.replace("-", "_")
+        .replace(".", "_")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace("[", "_")
+        .replace("]", "_")
+        .replace("{", "_")
+        .replace("}", "_")
+        .replace("(", "_")
+        .replace(")", "_")
+        .replace("<", "_")
+        .replace(">", "_")
+        .replace("=", "_")
+        .replace("+", "_")
+        .replace("*", "_")
+        .replace("&", "_")
+        .replace("%", "_")
+        .replace("$", "_")
+        .replace("#", "_")
+        .replace("@", "_")
+        .replace("!", "_")
+    )
 
 
 def pythonize_name(name: str) -> str:
@@ -75,7 +112,7 @@ class SchemaDefProperty:
 
     def __init__(self, name: str, schema: dict, required: bool = False) -> None:
         """Kubernetes OpenAPI item property class."""
-        self._name = escape_reserved(name)
+        self._name = name
         self._schema = schema
         self._required = required
 
@@ -180,6 +217,9 @@ class SchemaDefProperty:
                 self._dependencies.append(self.ref)
         if res == "":
             raise ValueError(f"Invalid type {self._schema}")
+
+        # remove duplicates in dependencies
+        self._dependencies = list(set(self._dependencies))
         if self.required:
             return res
         return f"core.optional[{res}]"
@@ -192,6 +232,7 @@ class SchemaDef:
         """OpenAPI item class."""
         self._name = name
         self._schema = schema
+        self._mapping = {}
         self._properties = self._process_properties()
 
     def _process_properties(self) -> dict[str, SchemaDefProperty]:
@@ -211,9 +252,11 @@ class SchemaDef:
                 required_list = self._schema["required"]
             res = {}
             for k, v in p.items():
-                res[escape_reserved(k)] = SchemaDefProperty(
-                    k, v, required=k in required_list
-                )
+                newk = escape_reserved(k)
+                if has_special_chars(newk):
+                    newk = escape_special_chars(newk)
+                    self._mapping[k] = newk
+                res[newk] = SchemaDefProperty(newk, v, required=k in required_list)
             return res
         return {}
 
@@ -238,7 +281,14 @@ class SchemaDef:
         res = []
         for v in self.properties.values():
             res.extend(v.dependencies)
+        # remove duplicates
+        res = list(set(res))
         return res
+
+    @property
+    def mapping(self) -> dict:
+        """Return the mapping."""
+        return self._mapping
 
     @property
     def name(self) -> str:
@@ -253,12 +303,16 @@ class SchemaDef:
         """Return the definition string."""
         tmpname = pythonize_name(self.name)
         deps = self.dependencies
-        msg = f"""
-@core.schema
+        msg = """@core.schema"""
+        if self._mapping != {}:
+            msg += f"""(
+    mapping={pformat(self.mapping, indent=4)},
+)"""
+        msg += f"""
 class {tmpname}:
     \"\"\"{self.description}\"\"\"
 
-    \"\"\"Dependencies: {deps}\"\"\"
+    \"\"\"Dependencies: {pformat(deps, indent=4)}\"\"\"
 """
         count = 0
         for k, v in self.properties.items():
@@ -391,13 +445,18 @@ if __name__ == "__main__":
         # for each item in res, check if all its dependencies are in tmp items
         for k, v in res.items():
             deps = v.dependencies
+            # print the dependencies not found
+            for dep in deps:
+                if dep not in res:
+                    logger.warning(f"Dependency {dep} not found for {k}")
+            # resolve the dependencies
             if all([dep in tmp for dep in deps]) or len(deps) == 0:
                 tmp[k] = v
                 keys_to_remove.append(k)
         if len(keys_to_remove) == 0:
             logger.error(
-                "No items can be moved to tmp, remaining items: {}".format(
-                    [v.dependencies for k, v in res.items()]
+                "No items can be moved to tmp, remaining keys {}\n items: {}".format(
+                    res.keys(), [v.dependencies for _, v in res.items()]
                 )
             )
             raise ValueError("No items can be moved to tmp")
