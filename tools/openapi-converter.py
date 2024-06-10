@@ -283,6 +283,9 @@ class SchemaDef:
             res.extend(v.dependencies)
         # remove duplicates
         res = list(set(res))
+        # remove self
+        if self.name in res:
+            res.remove(self.name)
         return res
 
     @property
@@ -316,7 +319,12 @@ class {tmpname}:
 """
         count = 0
         for k, v in self.properties.items():
-            msg += f"    {k}: {v.type}\n"
+            type_str = v.type
+            # check if type_str contains itself,
+            # if so, replace it with core.any_type
+            if type_str.find(tmpname) != -1:
+                type_str = type_str.replace(tmpname, "core.any_type")
+            msg += f"    {k}: {type_str}\n"
             count += 1
         if count == 0:
             msg += "    pass\n"
@@ -434,12 +442,6 @@ if __name__ == "__main__":
     # sort res based on its dependencies
     # max_iter = 100000
     tmp = {}
-    # hack begin
-    tmp["io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps"] = (
-        res["io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps"]
-    )
-    del res["io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSONSchemaProps"]
-    # hack end
     while len(res) > 0:
         keys_to_remove = []
         # for each item in res, check if all its dependencies are in tmp items
@@ -462,14 +464,6 @@ if __name__ == "__main__":
             raise ValueError("No items can be moved to tmp")
         for k in keys_to_remove:
             del res[k]
-        # max_iter -= 1
-        # if max_iter == 0:
-        #     logger.error(
-        #         "Max iteration reached, remaining items: {}".format(
-        #             [v.dependencies for k, v in res.items()]
-        #         )
-        #     )
-        #     raise ValueError("Max iteration reached")
     res = tmp
 
     for i in res.values():
