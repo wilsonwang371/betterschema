@@ -3,8 +3,9 @@
 import argparse
 import logging
 import os
+import re
 import urllib.request
-from pprint import pformat, pprint
+from pprint import pformat
 
 import coloredlogs
 import yaml
@@ -55,16 +56,12 @@ def escape_reserved(name: str) -> str:
 
 
 def has_special_chars(name: str) -> bool:
-    """Check if a name has special characters.
-    Special characters are: -, ., /, \, [, ], {, }, (, ), <, >, =, +, *, &, %, $, #, @, !
-    """
+    """Check if a name has special characters."""
     return any(c in name for c in "-./\[\]{}()<>+=*&%$#@!")
 
 
 def escape_special_chars(name: str) -> str:
-    """Escape special characters in a name.
-    Special characters are: -, ., /, \, [, ], {, }, (, ), <, >, =, +, *, &, %, $, #, @, !
-    """
+    """Escape special characters in a name."""
     return (
         name.replace("-", "_")
         .replace(".", "_")
@@ -120,7 +117,7 @@ class SchemaDefProperty:
         # remove ref #/definitions/
         if self._ref:
             if not self._ref.startswith("#/definitions/"):
-                logger.warning(f"Invalid ref {self._ref}")
+                logger.warning("Invalid ref %s", self._ref)
             else:
                 # remove #/definitions/
                 self._ref = self._ref[14:]
@@ -204,7 +201,6 @@ class SchemaDefProperty:
             else:
                 subtype = self._items.get("$ref", None)
                 assert subtype is not None
-                # logger.warning(f"Array subtype {subtype}")
                 res = pythonize_name(f"list[{subtype}]")
                 if subtype != self.name:
                     self._dependencies.append(subtype)
@@ -222,7 +218,7 @@ class SchemaDefProperty:
         self._dependencies = list(set(self._dependencies))
         if self.required:
             return res
-        return f"core.optional[{res}]"
+        return f"core.Optional[{res}]"
 
 
 class SchemaDef:
@@ -238,10 +234,12 @@ class SchemaDef:
     def _process_properties(self) -> dict[str, SchemaDefProperty]:
         """Process the properties."""
         expected_keys = ["type", "properties"]
-        no_match = [k for k in expected_keys if k not in self._schema]
+        no_match = [i for i in expected_keys if i not in self._schema]
         if len(no_match) == len(expected_keys):
             logger.warning(
-                f"No type nor properties found in {self._name}, exisiting keys: {self._schema.keys()}"
+                "No type nor properties found in "
+                + f"{self._name}, exisiting keys: "
+                + f"{self._schema.keys()}"
             )
             return {}
 
@@ -307,7 +305,7 @@ class SchemaDef:
         tmpname = pythonize_name(self.name)
         deps = self.dependencies
         msg = """@core.schema"""
-        if self._mapping != {}:
+        if self._mapping:
             msg += f"""(
     mapping={pformat(self.mapping, indent=4)},
 )"""
@@ -320,10 +318,12 @@ class {tmpname}:
         count = 0
         for k, v in self.properties.items():
             type_str = v.type
-            # check if type_str contains itself,
-            # if so, replace it with core.any_type
-            if type_str.find(tmpname) != -1:
-                type_str = type_str.replace(tmpname, "core.any_type")
+            # check if type_str contains tmpname using
+            # regex, if so, replace coresponding tmpname substring with 'core.SchemaSelf'
+            if re.search(rf"(?<!\w){tmpname}(?!\w)", type_str):
+                type_str = re.sub(
+                    rf"(?<!\w){tmpname}(?!\w)", "core.SchemaSelf", type_str
+                )
             msg += f"    {k}: {type_str}\n"
             count += 1
         if count == 0:
@@ -360,7 +360,7 @@ class SchemaDefFactory:
     @staticmethod
     def create(name: str, schema: dict) -> SchemaDef:
         """Create an OpenAPI item."""
-        logger.debug(f"Creating schema {name}")
+        logger.debug("Creating schema %s", name)
         if K8S_GVK_KEY in schema:
             return K8SSchemaDef(name, schema)
         return SchemaDef(name, schema)
@@ -372,7 +372,7 @@ class OpenAPISpecLoader:
     def __init__(self, spec_path: str) -> dict:
         """Load schemas from an OpenAPI spec file."""
         if os.path.isfile(spec_path):
-            specfile = "file://{}".format(os.path.realpath(spec_path))
+            specfile = f"file://{os.path.realpath(spec_path)}"
         else:
             specfile = spec_path
         req = urllib.request.Request(specfile)
@@ -380,7 +380,7 @@ class OpenAPISpecLoader:
             with urllib.request.urlopen(req, timeout=10) as response:
                 spec = yaml.safe_load(response)
         except urllib.error.HTTPError as e:
-            logger.error(f"Error loading {specfile}: {e}")
+            logger.error("Error loading %s: %s", specfile, e)
             raise
         self.data = spec
 
@@ -416,7 +416,10 @@ def parse_args():
         "-u",
         "--url",
         help="URL to the OpenAPI spec file",
-        default="https://raw.githubusercontent.com/kubernetes/kubernetes/master/api/openapi-spec/swagger.json",
+        default=(
+            "https://raw.githubusercontent.com/kubernetes"
+            + "/kubernetes/master/api/openapi-spec/swagger.json"
+        ),
     )
     # output file
     parser.add_argument(
@@ -428,7 +431,8 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
+    """Main function."""
     args = parse_args()
     data = OpenAPISpecLoader(args.url)
 
@@ -450,16 +454,16 @@ if __name__ == "__main__":
             # print the dependencies not found
             for dep in deps:
                 if dep not in res:
-                    logger.warning(f"Dependency {dep} not found for {k}")
+                    logger.warning("Dependency %s not found for %s", dep, k)
             # resolve the dependencies
             if all([dep in tmp for dep in deps]) or len(deps) == 0:
                 tmp[k] = v
                 keys_to_remove.append(k)
         if len(keys_to_remove) == 0:
             logger.error(
-                "No items can be moved to tmp, remaining keys {}\n items: {}".format(
-                    res.keys(), [v.dependencies for _, v in res.items()]
-                )
+                "No items can be moved to tmp, remaining " + "keys %s\n items: %s",
+                res.keys(),
+                [v.dependencies for _, v in res.items()],
             )
             raise ValueError("No items can be moved to tmp")
         for k in keys_to_remove:
@@ -468,28 +472,13 @@ if __name__ == "__main__":
 
     for i in res.values():
         if isinstance(i, K8SSchemaDef):
-            logger.info(f"Processing K8s Schema: {i.name}")
-            # pprint(i.gvks)
-            # for j in i.gvks:
-            #     print(gvkdict_get_apiversion(j))
-            #     print(gvkdict_get_kind(j))
-
-            # if len(i.gvks) > 1:
-            #     logger.warning(f"Multiple GVKs found for {i.name}, {i.gvks}")
+            logger.info("Processing K8s Schema: %s", i.name)
             for k, v in i.properties.items():
-                try:
-                    # logger.warning(f"{k}, {v.type}, {v.ref}, {v.raw_property}")
-                    existing_types[v.type] = 1
-                except Exception as e:
-                    logger.error(f"{i.name} {str(e)}")
+                existing_types[v.type] = 1
         else:
-            logger.info(f"Processing Schema: {i.name}")
+            logger.info("Processing Schema: %s", i.name)
             for k, v in i.properties.items():
-                try:
-                    # logger.warning(f"{k}, {v.type}, {v.ref}, {v.raw_property}")
-                    existing_types[v.type] = 1
-                except Exception as e:
-                    logger.error(f"{i.name} {str(e)}")
+                existing_types[v.type] = 1
         tmp = i.imports()
         for j in tmp:
             if j not in imports:
@@ -499,5 +488,9 @@ if __name__ == "__main__":
     output = "\n".join(imports) + "\n\n" + "\n".join(lines)
 
     # output to file
-    with open(args.output, "w") as f:
+    with open(args.output, "w", encoding="utf-8") as f:
         f.write(output)
+
+
+if __name__ == "__main__":
+    main()

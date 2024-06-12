@@ -2,7 +2,7 @@
 
 # pylint: disable=E0401, E0611
 import logging
-from typing import Optional, Union, Any
+import typing as t
 
 from betterschema.baselib import __schemas__, __watches__
 from betterschema.baselib import schema as baseschema
@@ -11,9 +11,23 @@ from betterschema.baselib import watch as basewatch
 logger = logging.getLogger(__name__)
 
 
-optional = Optional
-union = Union
-any_type = Any
+class SelfType:
+    """SelfType class"""
+
+    def __repr__(self):
+        return "SelfType()"
+
+    def __str__(self):
+        return "SelfType()"
+
+    # we do not support instantiation of this class
+    def __new__(cls, *args, **kwargs):
+        raise NotImplementedError("SelfType is not instantiable")
+
+
+Optional = t.Optional
+Union = t.Union
+SchemaSelf = SelfType
 
 
 def is_schema_instance(schema_instance):
@@ -34,7 +48,7 @@ def _schema(*args, **kwargs):
             raise ValueError("schema must be a class with __annotations__")
         res = baseschema(args[0])
         return res
-    elif not args and len(kwargs) == 1:
+    if not args and len(kwargs) == 1:
         # return a wrapper function that takes a class
         def wrapper(cls):
             if not isinstance(cls, type):
@@ -76,7 +90,9 @@ watch = _watch
 
 
 __all__ = [
-    "optional",
+    "Optional",
+    "Union",
+    "SchemaSelf",
     "schema",
     "watch",
     "__watches__",

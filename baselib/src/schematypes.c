@@ -60,6 +60,8 @@ SchemaType PySchema_ToSchemaType_FromTypeObj(PyObject *typeval) {
       return TypeList;
     } else if (PySchema_IsValidSchemaTypeObj(typeval)) {
       return TypeSchema;
+    } else if (strcmp(PyObject_GetNameStr(typeval), "SelfType") == 0) {
+      return TypeSelf;
     }
     // unsupported type
     WARN("Unsupported type name %s\n", PyObject_GetNameStr(typeval));
@@ -306,6 +308,9 @@ int PySchema_IsValidTypeObj(PyObject *typeval) {
     }
     return 1;
   }
+  case TypeSelf:
+    // TODO: implement me
+    return 1;
   default:
     return 0;
   }

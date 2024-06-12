@@ -70,11 +70,6 @@ PyObject *PySchema_GetAnnoDictObj(PyObject *obj) {
     PyErr_SetString(PyExc_AttributeError, "__annotations__ not found");
     return NULL;
   } else {
-    // make sure annotations is a dict
-    if (PyDict_Check(annotations) == 0) {
-      PyErr_SetString(PyExc_TypeError, "__annotations__ is not a dict");
-      return NULL;
-    }
     if (!PySchema_IsValidAnnotations(annotations)) {
       WARN("Invalid annotations\n");
       return NULL;
@@ -167,12 +162,12 @@ PyObject *PySchema_GetAnnotationType(PyObject *obj, const char *attr) {
 
 int PySchema_IsValidAnnotations(PyObject *annotations) {
   PyObject *key, *value;
-  // PyObject *schema = PySchema_GetRegisteredSchemaDictObj();
   Py_ssize_t pos = 0;
 
-  // if (schema == NULL) {
-  //   return 0;
-  // }
+  if (PyDict_Check(annotations) == 0) {
+    PyErr_SetString(PyExc_TypeError, "Annotations is not a dict");
+    return 0;
+  }
 
   while (PyDict_Next(annotations, &pos, &key, &value)) {
     // print key and value

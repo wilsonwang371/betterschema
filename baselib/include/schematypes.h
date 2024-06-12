@@ -15,6 +15,7 @@ typedef enum {
   TypeDict,
   TypeOptional,
   TypeUnion,
+  TypeSelf,
   TypeInvalid,
 } SchemaType;
 

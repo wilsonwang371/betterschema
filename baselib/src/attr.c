@@ -152,6 +152,10 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
   }
   SchemaType anno_type = PySchema_ToSchemaType_FromTypeObj(anno_obj);
   if (anno_type == TypeInvalid) {
+    PyErr_SetString(
+        PyExc_TypeError,
+        sprintf_static("Unsupported type while setting attribute %s",
+                       name_str_c));
     return -1;
   }
   switch (anno_type) {

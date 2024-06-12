@@ -74,7 +74,6 @@ static void process_options(PyObject *new_cls, PyObject *options) {
   // the value containes a dict of key value pairs
   PyObject *mapping = PyDict_GetItemString(options, "mapping");
   if (mapping != NULL) {
-    DEBUG("Processing mapping\n");
     // make sure mapping is a dict
     if (!PyDict_Check(mapping)) {
       PyErr_SetString(PyExc_TypeError, "Expected dict");
