@@ -1,6 +1,6 @@
 """Load schemas from external sources."""
 
-# pylint: disable=R0912, R0903, E0401, E1136, R0902, R0914
+# pylint: disable=R0912, R0903, E0401, E1136, R0902, R0914, W1401
 
 import argparse
 import logging
