@@ -42,8 +42,8 @@ class TestCore(unittest.TestCase):
                 "c": True,
                 "d": ["x", "y", "z"],
                 "e": {
-                    "x": 10,
-                    "y": "hello",
+                    "x": 30,
+                    "y": "hi",
                     "z": True,
                 },
             }
