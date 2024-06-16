@@ -62,6 +62,7 @@ setup(
     ],
     install_requires=[
         "PyYAML",
+        "coloredlogs",
     ],
     extras_require={
         "dev": [
@@ -71,6 +72,7 @@ setup(
             "isort",
             "pylint",
             "bump2version",
+            "coloredlogs",
         ]
     },
     classifiers=[

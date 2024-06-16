@@ -35,8 +35,9 @@ class Foo:
     foo2: int # Integer field
     foo3: bool # Boolean field
     foo4: list[str] # List of strings
-    foo5: core.optional[int] # Optional field
+    foo5: core.Optional[int] # Optional field
     foo6: dict[str, int] # Dictionary field
+    foo7: core.Optional[core.Union[int, str]] # Optional field with multiple types
 
     @core.schema
     class EmbeddedSchema:

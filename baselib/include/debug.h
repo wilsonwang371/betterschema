@@ -6,33 +6,72 @@
 #define MAX_STACK_LEVELS 50
 #define UNUSED(x) (void)(x)
 
-#define FATAL(fmt, ...)                                                        \
+#define LOG_LEVEL_FATAL 0
+#define LOG_LEVEL_WARN 1
+#define LOG_LEVEL_INFO 2
+#define LOG_LEVEL_DEBUG 3
+
+#ifndef LOG_LEVEL
+#define LOG_LEVEL LOG_LEVEL_DEBUG
+#endif
+
+#define PANIC(fmt, ...)                                                        \
   do {                                                                         \
     fprintf(stderr, "\033[1;31m");                                             \
-    fprintf(stderr, "Fatal: %s:%d: ", __FILE__, __LINE__);                     \
+    fprintf(stderr, "Panic: %s:%d: ", __FILE__, __LINE__);                     \
     fprintf(stderr, fmt, ##__VA_ARGS__);                                       \
     fprintf(stderr, "\033[0m");                                                \
+    print_stacktrace();                                                        \
     exit(1);                                                                   \
+  } while (0)
+
+#define FATAL(fmt, ...)                                                        \
+  do {                                                                         \
+    if (LOG_LEVEL >= LOG_LEVEL_FATAL) {                                        \
+      fprintf(stderr, "\033[1;31m");                                           \
+      fprintf(stderr, "Fatal: %s:%d: ", __FILE__, __LINE__);                   \
+      fprintf(stderr, fmt, ##__VA_ARGS__);                                     \
+      fprintf(stderr, "\033[0m");                                              \
+    }                                                                          \
   } while (0)
 
 #define WARN(fmt, ...)                                                         \
   do {                                                                         \
-    fprintf(stderr, "\033[1;33m");                                             \
-    fprintf(stderr, "Warning: %s:%d: ", __FILE__, __LINE__);                   \
-    fprintf(stderr, fmt, ##__VA_ARGS__);                                       \
-    fprintf(stderr, "\033[0m");                                                \
+    if (LOG_LEVEL >= LOG_LEVEL_WARN) {                                         \
+      fprintf(stderr, "\033[1;33m");                                           \
+      fprintf(stderr, "Warning: %s:%d: ", __FILE__, __LINE__);                 \
+      fprintf(stderr, fmt, ##__VA_ARGS__);                                     \
+      fprintf(stderr, "\033[0m");                                              \
+    }                                                                          \
+  } while (0)
+
+#define INFO(fmt, ...)                                                         \
+  do {                                                                         \
+    if (LOG_LEVEL >= LOG_LEVEL_INFO) {                                         \
+      fprintf(stderr, "\033[1;32m");                                           \
+      fprintf(stderr, "Info: %s:%d: ", __FILE__, __LINE__);                    \
+      fprintf(stderr, fmt, ##__VA_ARGS__);                                     \
+      fprintf(stderr, "\033[0m");                                              \
+    }                                                                          \
+  } while (0)
+
+#define DEBUG(fmt, ...)                                                        \
+  do {                                                                         \
+    if (LOG_LEVEL >= LOG_LEVEL_DEBUG) {                                        \
+      fprintf(stderr, "\033[1;34m");                                           \
+      fprintf(stderr, "Debug: %s:%d: ", __FILE__, __LINE__);                   \
+      fprintf(stderr, fmt, ##__VA_ARGS__);                                     \
+      fprintf(stderr, "\033[0m");                                              \
+    }                                                                          \
   } while (0)
 
 // only on macos
 #if defined(__APPLE__) && defined(__MACH__)
 #include <execinfo.h>
 
-// helper-function to print the current stack trace
 inline void print_stacktrace() {
   void *buffer[MAX_STACK_LEVELS];
   int levels = backtrace(buffer, MAX_STACK_LEVELS);
-
-  // print to stderr (fd = 2), and remove this function from the trace
   backtrace_symbols_fd(buffer + 1, levels - 1, 2);
 }
 #else

@@ -6,8 +6,8 @@ import unittest
 from betterschema import core, render
 
 
-@core.schema
-class DEF2:
+@core.schema(mapping={"x": "a", "y": "b", "z": "c"})
+class DEFA2:
     """DEF schema"""
 
     x: int
@@ -16,7 +16,7 @@ class DEF2:
 
 
 @core.schema
-class ABC2:
+class ABCD2:
     """ABC schema"""
 
     a: int
@@ -24,7 +24,7 @@ class ABC2:
     c: bool
     d: list[str]
     # d: t.Optional[int]  # not supported yet
-    e: DEF2
+    e: DEFA2
 
 
 class TestCore(unittest.TestCase):
@@ -33,20 +33,24 @@ class TestCore(unittest.TestCase):
     def test_rendermodule(self):
         """Test render module"""
 
-        print(str(ABC2.__annotations__))
+        print(str(ABCD2.__annotations__))
 
-        a = ABC2(
+        a = ABCD2(
             {
                 "a": 10,
                 "b": "hello",
                 "c": True,
-                "d": ["x", "y", "z"],
+                "d": ["a", "b", "c"],
                 "e": {
-                    "x": 30,
-                    "y": "hi",
+                    "x": 10,
+                    "y": "hello",
                     "z": True,
                 },
             }
         )
-        render.render(a)
-        render.render(a, render.RenderType.JSON)
+
+        y = render.render(a)
+        j = render.render(a, render.RenderType.JSON)
+
+        print(y)
+        print(j)

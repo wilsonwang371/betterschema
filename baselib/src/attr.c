@@ -7,13 +7,13 @@
 // getattr
 PyObject *PySchema_ClassDefGetAttr(PyObject *self, PyObject *name) {
   // get self annotations
-  if (PySchema_GetAnnoListObj(self) == NULL) {
+  if (PySchema_GetAnnoDictObj(self) == NULL) {
     return NULL;
   }
 
   // get the name of the attribute
   PyObject *name_str = PyObject_Str(name);
-  char name_str_c[100];
+  char name_str_c[256];
   sprintf(name_str_c, "%s", PyUnicode_AsUTF8(name_str));
   Py_DECREF(name_str);
 
@@ -122,13 +122,13 @@ int PySchema_IsValidListInstance(PyObject *value, PyObject *anno_element_type) {
 // setattr
 int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
   // get self annotations
-  if (PySchema_GetAnnoListObj(self) == NULL) {
+  if (PySchema_GetAnnoDictObj(self) == NULL) {
     return -1;
   }
 
   // get the name of the attribute
   PyObject *name_str = PyObject_Str(name);
-  char name_str_c[100];
+  char name_str_c[256];
   sprintf(name_str_c, "%s", PyUnicode_AsUTF8(name_str));
   Py_DECREF(name_str);
 
@@ -152,6 +152,10 @@ int PySchema_ClassDefSetAttr(PyObject *self, PyObject *name, PyObject *value) {
   }
   SchemaType anno_type = PySchema_ToSchemaType_FromTypeObj(anno_obj);
   if (anno_type == TypeInvalid) {
+    PyErr_SetString(
+        PyExc_TypeError,
+        sprintf_static("Unsupported type while setting attribute %s",
+                       name_str_c));
     return -1;
   }
   switch (anno_type) {

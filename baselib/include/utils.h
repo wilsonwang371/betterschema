@@ -10,8 +10,8 @@ PyObject *PyObject_GetName(PyObject *obj);
 const char *PyObject_GetNameStr(PyObject *obj);
 
 // schema annotation related functions
-PyObject *PySchema_GetAnnoListObj(PyObject *obj);
-PyObject *PySchema_SetAnnoListObj(PyObject *obj, PyObject *annotations);
+PyObject *PySchema_GetAnnoDictObj(PyObject *obj);
+PyObject *PySchema_SetAnnoDictObj(PyObject *obj, PyObject *annotations);
 
 int PySchema_IsOptionalAnno_ByCStr(PyObject *obj, const char *attr);
 

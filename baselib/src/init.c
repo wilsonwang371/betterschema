@@ -4,7 +4,7 @@
 int PySchema_ClassInit(PyObject *self, PyObject *args, PyObject *kwds) {
 
   // get annotations
-  PyObject *annotations = PySchema_GetAnnoListObj(self);
+  PyObject *annotations = PySchema_GetAnnoDictObj(self);
   if (annotations == NULL) {
     return -1;
   }
