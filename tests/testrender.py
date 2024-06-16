@@ -40,7 +40,7 @@ class TestCore(unittest.TestCase):
                 "a": 10,
                 "b": "hello",
                 "c": True,
-                "d": ["a", "b", "c"],
+                "d": ["x", "y", "z"],
                 "e": {
                     "x": 10,
                     "y": "hello",

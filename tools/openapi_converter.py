@@ -456,7 +456,7 @@ def main():
                 if dep not in res:
                     logger.warning("Dependency %s not found for %s", dep, k)
             # resolve the dependencies
-            if all([dep in tmp for dep in deps]) or len(deps) == 0:
+            if all(dep in tmp for dep in deps) or len(deps) == 0:
                 tmp[k] = v
                 keys_to_remove.append(k)
         if len(keys_to_remove) == 0:
