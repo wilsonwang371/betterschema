@@ -48,9 +48,5 @@ class TestCore(unittest.TestCase):
                 },
             }
         )
-
-        y = render.render(a)
-        j = render.render(a, render.RenderType.JSON)
-
-        print(y)
-        print(j)
+        render.render(a)
+        render.render(a, render.RenderType.JSON)
