@@ -146,6 +146,20 @@ def watch_values(inst, name: str, old, new):
 
 ```
 
+### Name Mapping
+
+`core.schema` can take an optional argument `mapping` which is a dictionary that maps the schema attribute names to the corresponding data attribute names. This can be useful when the schema attribute names do not match the data attribute names. Example:
+
+```python
+
+@core.schema(mapping={"foo1": "data_foo1", "foo2": "data_foo2"})
+class Foo:
+    foo1: str
+    foo2: int
+
+```
+
+
 ## Contributing
 
 Contributions are welcome! Please submit a pull request or open an issue to discuss your ideas.
