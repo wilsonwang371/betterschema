@@ -1,9 +1,5 @@
 """Load schemas from external sources."""
-# ignore the following flake8 errors
-# R0912: Allow more than 12 branches
-# R0903: Allow too few public methods
-# R0912: Allow too many branches
-# E0401: Allow module level import not at top of file
+# pylint: disable=R0912, R0903, E0401, E1136
 
 import argparse
 import logging
